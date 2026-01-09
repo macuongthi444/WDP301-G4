@@ -22,7 +22,7 @@ function App() {
             <strong>Kết nối backend:</strong> {message}
           </Alert>
           <Button variant="primary" size="lg">
-            Vite + React Bootstrap Ready! (Siêu nhanh 🚀)
+            Vite + React Bootstrap Ready! (Siêu nhanh )
           </Button>
         </Card.Body>
         <Card.Footer className="text-muted">

@@ -10,11 +10,11 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS, // Phải dùng App Password
   },
 });
 
-// Helper gửi OTP
+// Helper gửi email OTP
 const sendOTPEmail = async (email, otp, type) => {
   let subject = type === 'verify_email' ? 'Xác thực email - Nền tảng Giáo dục' : 'Đặt lại mật khẩu - Nền tảng Giáo dục';
   let html = `
@@ -24,18 +24,12 @@ const sendOTPEmail = async (email, otp, type) => {
     <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
   `;
 
-  try {
-    await transporter.sendMail({
-      from: `"Nền tảng Giáo dục" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject,
-      html,
-    });
-    console.log(`OTP email sent to ${email} for ${type}`);
-  } catch (error) {
-    console.error('Lỗi gửi email OTP:', error);
-    throw new Error('Không thể gửi email OTP');
-  }
+  await transporter.sendMail({
+    from: `"Nền tảng Giáo dục" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject,
+    html,
+  });
 };
 
 exports.register = async (req, res) => {
@@ -66,7 +60,7 @@ exports.register = async (req, res) => {
       full_name,
       phone,
       roles: roleIds,
-      // status mặc định là "PENDING" từ schema → không cần set thủ công
+      // status mặc định là "PENDING" từ schema
     });
 
     // Tạo OTP verify email
@@ -86,7 +80,6 @@ exports.register = async (req, res) => {
       userId: user._id,
     });
   } catch (error) {
-    console.error('Register error:', error.stack);
     res.status(500).json({ message: 'Lỗi server khi đăng ký', error: error.message });
   }
 };
@@ -111,17 +104,6 @@ exports.verifyEmail = async (req, res) => {
       return res.status(400).json({ message: 'Email đã được xác thực rồi' });
     }
 
-    // Debug
-    console.log('--- DEBUG VERIFY EMAIL OTP ---');
-    console.log('Email:', email);
-    console.log('OTP nhập:', otp);
-    console.log('OTP lưu:', user.emailVerificationOTP);
-    console.log('ExpiresAt:', user.emailVerificationOTPExpires?.toISOString());
-    console.log('Hiện tại:', new Date().toISOString());
-    console.log('Còn lại (phút):', user.emailVerificationOTPExpires 
-      ? (user.emailVerificationOTPExpires - new Date()) / 1000 / 60 
-      : 'Không có');
-
     if (!user.emailVerificationOTP || user.emailVerificationOTP !== otp) {
       return res.status(400).json({ message: 'Mã OTP không đúng' });
     }
@@ -140,7 +122,6 @@ exports.verifyEmail = async (req, res) => {
       message: 'Xác thực email thành công. Tài khoản của bạn đang chờ admin duyệt để kích hoạt. Bạn sẽ nhận thông báo khi được phê duyệt.',
     });
   } catch (error) {
-    console.error('Verify email error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
@@ -184,11 +165,11 @@ exports.login = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error('Login error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
 
+// FORGOT PASSWORD - Gửi OTP reset
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -202,12 +183,7 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'Email không tồn tại' });
     }
 
-    const otp = otpGenerator.generate(6, {
-      digits: true,
-      alphabets: false,
-      upperCase: false,
-      specialChars: false,
-    });
+    const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
 
     const expiresDate = new Date();
     expiresDate.setMinutes(expiresDate.getMinutes() + 10);
@@ -220,11 +196,11 @@ exports.forgotPassword = async (req, res) => {
 
     res.status(200).json({ message: 'Mã OTP reset đã được gửi đến email của bạn' });
   } catch (error) {
-    console.error('Forgot password error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
 
+// RESET PASSWORD với OTP
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -238,13 +214,6 @@ exports.resetPassword = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
     }
 
-    // Debug OTP reset (tương tự verify)
-    console.log('--- DEBUG RESET OTP ---');
-    console.log('OTP nhập:', otp);
-    console.log('OTP lưu:', user.resetPasswordOTP);
-    console.log('ExpiresAt:', user.resetPasswordOTPExpires ? user.resetPasswordOTPExpires.toISOString() : 'Không có');
-    console.log('Hiện tại:', new Date().toISOString());
-
     if (!user.resetPasswordOTP || user.resetPasswordOTP !== otp) {
       return res.status(400).json({ message: 'Mã OTP không đúng' });
     }
@@ -253,7 +222,6 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Mã OTP đã hết hạn' });
     }
 
-    // Cập nhật mật khẩu mới
     user.password_hash = await hashPassword(newPassword);
     user.resetPasswordOTP = undefined;
     user.resetPasswordOTPExpires = undefined;
@@ -261,7 +229,6 @@ exports.resetPassword = async (req, res) => {
 
     res.status(200).json({ message: 'Đặt lại mật khẩu thành công. Hãy đăng nhập lại.' });
   } catch (error) {
-    console.error('Reset password error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };

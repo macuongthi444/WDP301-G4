@@ -21,6 +21,10 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded body
 const cors = require('cors');
 app.use(cors({ origin: '*' })); // Thay '*' bằng domain cụ thể cho production
 
+// Kết nối tất cả routes qua file index
+const apiRoutes = require('./src/routers/index');   // ← Đây là phần mới
+app.use('/api', apiRoutes);                        // Tất cả route bắt đầu bằng /api
+
 // Routes placeholder (thêm routes thực tế ở đây)
 app.get('/', (req, res) => {
   res.send('Welcome to Education Management API!');

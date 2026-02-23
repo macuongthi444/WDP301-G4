@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const RoleSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, unique: true, trim: true }, // ADMIN/TUTOR/FAMILY
+    name: { type: String, required: true, unique: true, trim: true }, 
     description: { type: String },
     permissions: { type: [String], required: true, default: [] },
   },
@@ -10,3 +10,4 @@ const RoleSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Role", RoleSchema);
+ 

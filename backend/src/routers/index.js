@@ -9,7 +9,7 @@ const userRoutes = require('./user.routes');
 const classRoutes = require('./class.routes');
 const syllabusRoutes = require('./syllabus.routes');
 const fileResourceRoutes = require('./fileResource.routes');
-
+const teachingScheduleRoutes = require('./teachingSchedule.routes')
 // Nếu sau này có thêm router khác, import ở đây
 // Ví dụ:
 // const userRoutes = require('./user.routes');
@@ -22,8 +22,8 @@ router.use('/user', userRoutes);
 router.use('/class', classRoutes);
 router.use('/syllabus', syllabusRoutes);
 router.use('/file-resources', fileResourceRoutes);
-
-// Thêm các route khác ở đây khi có
+router.use('/class', teachingScheduleRoutes); 
+// // Thêm các route khác ở đây khi có
 // router.use('/users', userRoutes);
 // router.use('/classes', classRoutes);
 // router.use('/attendances', attendanceRoutes);

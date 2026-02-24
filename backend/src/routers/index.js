@@ -5,6 +5,8 @@ const router = express.Router();
 // Import tất cả các router con (module routes)
 const roleRoutes = require('./role.routes');
 const authRoutes = require('./auth.routes');
+const userRoutes = require('./user.routes');
+const classRoutes = require('./class.routes');
 // Nếu sau này có thêm router khác, import ở đây
 // Ví dụ:
 // const userRoutes = require('./user.routes');
@@ -14,6 +16,8 @@ const authRoutes = require('./auth.routes');
 // Gắn các router con vào router chính
 router.use('/roles', roleRoutes);
 router.use('/auth', authRoutes);
+router.use('/user', userRoutes);
+router.use('/class', classRoutes);
 // Thêm các route khác ở đây khi có
 // router.use('/users', userRoutes);
 // router.use('/classes', classRoutes);
@@ -26,6 +30,8 @@ router.get('/', (req, res) => {
     availableEndpoints: [
       '/api/roles',
       '/api/auth',
+      '/api/user',
+      '/api/class',
       // Thêm các endpoint khác khi có
     ]
   });

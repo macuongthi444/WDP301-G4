@@ -5,8 +5,6 @@ import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import './css/AuthPage.css';
 
-// Bạn có thể dùng icon từ react-icons hoặc font-awesome
-// Ở đây mình dùng react-icons làm ví dụ (cài đặt: npm install react-icons)
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const AuthPage = () => {
@@ -34,7 +32,7 @@ const AuthPage = () => {
     full_name: '',
     email: '',
     password: '',
-    confirmPassword: '',          // ← thêm trường này
+    confirmPassword: '',
     phone: '',
     roleNames: 'STUDENT',
   });
@@ -48,10 +46,24 @@ const AuthPage = () => {
 
     try {
       const res = await api.post('/auth/login', loginData);
-      login(res.data.token, res.data.user);
-      navigate('/dashboard');
+
+      // Giả sử backend trả về: { token, user: { _id, full_name, email, roleNames: ['TUTOR'] hoặc ['STUDENT'] } }
+      const { token, user } = res.data;
+
+      // Lưu thông tin user vào context
+      login(token, user);
+
+      // Redirect theo role (roleNames là array, lấy role đầu tiên)
+      const role = user.roles?.[0] || 'STUDENT';
+
+      if (role === 'TUTOR') {
+        navigate('/dashboard'); // Trang quản lý lớp cho tutor
+      } else {
+        navigate('/student-dashboard'); // Trang cho học viên (tạo sau nếu chưa có)
+        // Hoặc '/my-classes', '/home', tùy theo thiết kế của bạn
+      }
     } catch (err) {
-      setLoginError(err.response?.data?.message || 'Đăng nhập thất bại');
+      setLoginError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.');
     }
   };
 
@@ -59,7 +71,6 @@ const AuthPage = () => {
     e.preventDefault();
     setRegisterError('');
 
-    // Kiểm tra mật khẩu khớp nhau
     if (registerData.password !== registerData.confirmPassword) {
       setRegisterError('Mật khẩu nhập lại không khớp');
       return;
@@ -71,18 +82,19 @@ const AuthPage = () => {
         email: registerData.email,
         password: registerData.password,
         phone: registerData.phone,
-        roleNames: [registerData.roleNames],
+        roleNames: [registerData.roleNames], // backend mong đợi array
       });
-      alert(res.data.message || 'Đăng ký thành công! Kiểm tra email.');
+
+      alert(res.data.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực.');
       navigate('/verify-email');
     } catch (err) {
-      setRegisterError(err.response?.data?.message || 'Đăng ký thất bại');
+      setRegisterError(err.response?.data?.message || 'Đăng ký thất bại. Email có thể đã tồn tại.');
     }
   };
 
   return (
     <div className={`container ${rightPanelActive ? 'right-panel-active' : ''}`}>
-      {/* ================== FORM ĐĂNG NHẬP ================== */}
+      {/* FORM ĐĂNG NHẬP */}
       <div className="form-container sign-in-container">
         <form onSubmit={handleLoginSubmit}>
           <h1>Đăng Nhập</h1>
@@ -125,7 +137,7 @@ const AuthPage = () => {
         </form>
       </div>
 
-      {/* ================== FORM ĐĂNG KÝ ================== */}
+      {/* FORM ĐĂNG KÝ */}
       <div className="form-container sign-up-container">
         <form onSubmit={handleRegisterSubmit}>
           <h1>Tạo Tài Khoản</h1>
@@ -204,7 +216,7 @@ const AuthPage = () => {
         </form>
       </div>
 
-      {/* Overlay giữ nguyên */}
+      {/* Overlay */}
       <div className="overlay-container">
         <div className="overlay">
           <div className="overlay-panel overlay-left">

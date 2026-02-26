@@ -21,18 +21,42 @@ function AppContent() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        navigate('/auth/login', { replace: true });
-      } else if (user.roles?.includes('TUTOR')) {
-        if (window.location.pathname === '/' || window.location.pathname === '/auth/login') {
-          navigate('/dashboard', { replace: true });
-        }
-      } else if (user.roles?.includes('STUDENT')) {
-        navigate('/student-dashboard', { replace: true });
-      }
+  if (loading) return;
+
+  // Danh sách các đường dẫn KHÔNG được redirect về login
+  const publicPaths = [
+    '/auth', '/auth/login', '/auth/register',
+    '/verify-email',
+    '/forgot-password', '/reset-password'
+  ];
+
+  const currentPath = window.location.pathname;
+
+  if (!user) {
+    // Chỉ redirect nếu KHÔNG nằm trong public paths
+    const isPublicPath = publicPaths.some(p => 
+      currentPath === p || currentPath.startsWith(p + '/')
+    );
+
+    if (!isPublicPath) {
+      console.log('Redirect to /auth because not logged in and not on public path');
+      navigate('/auth', { replace: true });
     }
-  }, [user, loading, navigate]); // Dependency ổn định
+    return;
+  }
+
+  // Đã login → redirect về dashboard phù hợp
+  if (user.roles?.includes('TUTOR')) {
+    if (currentPath === '/' || currentPath.startsWith('/auth')) {
+      navigate('/dashboard', { replace: true });
+    }
+  } else if (user.roles?.includes('STUDENT')) {
+    if (currentPath === '/' || currentPath.startsWith('/auth')) {
+      navigate('/student-dashboard', { replace: true });
+    }
+  }
+
+}, [user, loading, navigate]);
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center">Đang tải...</div>;

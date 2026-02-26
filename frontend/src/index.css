@@ -1,7 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* @layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+} */
+html, body {
+  height: 100%;
+}
 
 body {
-  @apply bg-gray-50 text-gray-900;
+  margin: 0;
+  display: block;      /* bỏ flex */
+  min-height: 100vh;
+  place-items: unset;  /* nếu có */
+}
+#root {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }

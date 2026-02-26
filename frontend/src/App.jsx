@@ -14,7 +14,7 @@ import GuestHome from "./pages/Home/GuestHome";
 // import './App.css';
 
 // Layout chung cho tutor (sidebar + header)
-// import MainLayout from './components/layout/MainLayout';
+import MainLayout from './components/layout/MainLayout';
 
 // Placeholder student
 const StudentDashboard = () => <div>Trang học viên (đang phát triển)</div>;

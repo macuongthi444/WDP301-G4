@@ -1,32 +1,30 @@
 /* src/pages/Authentication/AuthLayout.css */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Poppins:300,400,600,700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body {
   font-family: 'Poppins', sans-serif;
- background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(236, 233, 233, 0.4)), 
-              url('../../../assets/hinh-nen-powerpoint-hoc-tap-don-gian.jpg') center/cover no-repeat fixed;
-  min-height: 100vh;
+  background: linear-gradient(to right, #ece9e6, #ffffff);
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  height: 100vh;
+  margin: 0;
 }
 
 .container {
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(0, 0, 0, 0.08);
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
   position: relative;
   overflow: hidden;
-  width: 900px;
+  width: 850px;
   max-width: 100%;
-  min-height: 580px;
+  min-height: 550px;
 }
 
 .form-container {
@@ -57,177 +55,14 @@ body {
   transform: translateX(100%);
   opacity: 1;
   z-index: 5;
+  animation: show 0.6s;
 }
 
-form {
-  background-color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0 60px;
-  height: 100%;
-  text-align: center;
+@keyframes show {
+  0%, 49.99% { opacity: 0; z-index: 1; }
+  50%, 100%  { opacity: 1; z-index: 5; }
 }
 
-h1 {
-  font-weight: 700;
-  font-size: 2.1rem;
-  margin: 0 0 20px;
-  color: #1a1a1a;
-}
-
-p, span {
-  font-size: 0.95rem;
-  color: #555;
-  margin: 12px 0 24px;
-  line-height: 1.6;
-}
-
-.white-text {
-  color: white;
-}
-
-a {
-  color: #2575fc;
-  font-size: 0.9rem;
-  text-decoration: none;
-  margin: 12px 0;
-  transition: color 0.3s;
-}
-
-a:hover {
-  color: #6a11cb;
-  text-decoration: underline;
-}
-
-/* INPUT & SELECT */
-input,
-select {
-  width: 100%;
-  height: 48px;
-  padding: 0 16px;
-  background-color: #f8f9fc;
-  border: 1px solid #e0e6ef;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  color: #333;
-  margin: 10px 0;
-  transition: all 0.25s ease;
-  box-sizing: border-box;
-}
-
-input:focus,
-select:focus {
-  outline: none;
-  border-color: #6a11cb;
-  box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.15);
-  background-color: white;
-}
-
-input::placeholder {
-  color: #a0aec0;
-}
-/* Checkbox hiển thị mật khẩu - nhỏ gọn hơn */
-.checkbox-container {
-  width: 100%;
-  margin: 6px 0 16px;          /* giảm margin trên/dưới cho gọn */
-  text-align: left;
-  font-size: 0.875rem;         /* chữ nhỏ hơn một chút */
-}
-
-.checkbox-container label {
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;         /* 14px → nhỏ hơn */
-  color: #555;
-  cursor: pointer;
-  user-select: none;
-  line-height: 1.4;
-}
-
-.checkbox-container input[type="checkbox"] {
-  width: 16px;                 /* nhỏ hơn (từ 18px xuống 16px) */
-  height: 16px;
-  margin-right: 8px;           /* khoảng cách giữa checkbox và chữ */
-  accent-color: #6a11cb;       /* màu khi checked, khớp theme */
-  cursor: pointer;
-  border-radius: 4px;          /* bo góc nhẹ cho đẹp */
-}
-
-.checkbox-container label:hover {
-  color: #2575fc;
-}
-
-/* BUTTON */
-button {
-  height: 48px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(to right, #6a11cb, #2575fc);
-  color: white;
-  font-size: 0.95rem;
-  font-weight: 600;
-  padding: 0 40px;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 16px 0 12px;
-  box-shadow: 0 4px 12px rgba(106, 17, 203, 0.25);
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(106, 17, 203, 0.35);
-}
-
-button.ghost {
-  background: transparent;
-  border: 2px solid white;
-  color: white;
-  font-weight: 600;
-}
-
-button.ghost:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* Social icons */
-.social-container {
-  margin: 20px 0 28px;
-}
-
-.social-container a {
-  border: 1px solid #e2e8f0;
-  border-radius: 50%;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 8px;
-  height: 44px;
-  width: 44px;
-  color: #4a5568;
-  font-size: 1.1rem;
-  transition: all 0.3s;
-}
-
-.social-container a:hover {
-  background: linear-gradient(to right, #6a11cb, #2575fc);
-  color: white;
-  border-color: transparent;
-  transform: translateY(-3px);
-}
-
-/* Error message */
-.error-message {
-  color: #e53e3e;
-  font-size: 0.85rem;
-  margin: 8px 0 16px;
-  font-weight: 500;
-}
-
-/* Overlay (giữ nguyên nhưng tinh chỉnh nhẹ) */
 .overlay-container {
   position: absolute;
   top: 0;
@@ -245,8 +80,10 @@ button.ghost:hover {
 
 .overlay {
   background: linear-gradient(to right, #6a11cb, #2575fc);
+  background-repeat: no-repeat;
   background-size: cover;
-  color: white;
+  background-position: 0 0;
+  color: #ffffff;
   position: relative;
   left: -100%;
   height: 100%;
@@ -265,11 +102,12 @@ button.ghost:hover {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  padding: 0 50px;
+  padding: 0 40px;
   text-align: center;
   top: 0;
   height: 100%;
   width: 50%;
+  transform: translateX(0);
   transition: transform 0.6s ease-in-out;
 }
 
@@ -290,7 +128,125 @@ button.ghost:hover {
   transform: translateX(20%);
 }
 
-/* Mobile responsive */
+form {
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 50px;
+  height: 100%;
+  text-align: center;
+}
+
+h1 {
+  font-weight: 700;
+  margin: 0;
+  color: #333;
+}
+
+.white-text { color: white; }
+
+p {
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 20px;
+  letter-spacing: 0.5px;
+  margin: 20px 0 30px;
+}
+
+span {
+  font-size: 12px;
+  color: #666;
+  margin: 15px 0 10px;
+}
+
+a {
+  color: #333;
+  font-size: 14px;
+  text-decoration: none;
+  margin: 15px 0;
+  transition: 0.3s;
+}
+
+a:hover {
+  color: #2575fc;
+}
+
+input,
+select {
+  height: 44px;               
+  padding: 12px 15px !important;
+  background-color: #eee;
+  border: none;
+  border-radius: 4px;
+  margin: 8px 0;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #6a11cb;
+}
+
+button {
+  border-radius: 20px;
+  border: none;
+  background: linear-gradient(to right, #6a11cb, #2575fc);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 12px 45px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.3s;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  transform: scale(1.03);
+  box-shadow: 0 5px 15px rgba(106,17,203,0.4);
+}
+
+button.ghost {
+  background: transparent;
+  border: 2px solid #ffffff;
+}
+
+.social-container {
+  margin: 20px 0;
+}
+
+.social-container a {
+  border: 1px solid #dddddd;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 5px;
+  height: 40px;
+  width: 40px;
+  color: #333;
+  transition: 0.3s;
+}
+
+.social-container a:hover {
+  background-color: #2575fc;
+  color: white;
+  border-color: #2575fc;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 13px;
+  margin: 10px 0;
+}
+
+/* Mobile */
 @media (max-width: 768px) {
   .container {
     width: 100%;
@@ -298,32 +254,63 @@ button.ghost:hover {
     border-radius: 0;
     box-shadow: none;
   }
-
   .form-container {
     width: 100%;
-    padding: 0 20px;
+    padding: 20px;
   }
-
   .overlay-container {
     display: none;
   }
+}
+.relative.password-field {
+  position: relative;
+  width: 100%;
+}
+.relative.password-field input {
+  padding: 12px 50px 12px 15px !important;  /* left 15px - right 50px cho icon */
+  background-color: #eee;
+  border: none;
+  border-radius: 4px;
+  margin: 8px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
 
-  form {
-    padding: 40px 25px;
+.relative.password-field input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #6a11cb;
+}
+.relative.password-field .toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 15px;                /* cách cạnh phải 15px */
+  transform: translateY(-50%); /* đẩy chính giữa theo chiều dọc */
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 20px;            /* tăng nhẹ size icon cho đẹp hơn */
+  padding: 0;
+  line-height: 1;             /* tránh lệch do line-height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;                /* optional: giới hạn vùng click */
+  height: 24px;
+}
+
+.relative.password-field .toggle-password:hover {
+  color: #2575fc;
+}
+
+
+/* Mobile fix nếu cần */
+@media (max-width: 768px) {
+  .relative.password-field input {
+    padding: 12px 45px 12px 12px !important;
   }
-
-  h1 {
-    font-size: 1.8rem;
-  }
-
-  input,
-  select,
-  button {
-    height: 50px;
-    font-size: 0.97rem;
-  }
-
-  .checkbox-container label {
-    font-size: 0.92rem;
+  .relative.password-field .toggle-password {
+    right: 12px;
+    font-size: 18px;
   }
 }

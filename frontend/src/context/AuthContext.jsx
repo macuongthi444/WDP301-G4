@@ -7,14 +7,13 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-const [pendingEmail, setPendingEmail] = useState(null); // ← thêm cái này
+
   // Hàm login: lưu token + user vào localStorage
   const login = (token, userData) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(userData);
-    setPendingEmail(null); // xóa tạm email sau khi login
   };
 
   // Hàm logout
@@ -23,7 +22,6 @@ const [pendingEmail, setPendingEmail] = useState(null); // ← thêm cái này
     localStorage.removeItem('user');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
-    setPendingEmail(null);
   };
 
   // Load user từ localStorage khi app khởi động (chỉ 1 lần)
@@ -46,14 +44,7 @@ const [pendingEmail, setPendingEmail] = useState(null); // ← thêm cái này
   }, []); // ← Dependency rỗng: chỉ chạy 1 lần khi mount
 
   return (
-    <AuthContext.Provider value={{ 
-        user, 
-        loading, 
-        login, 
-        logout,
-        pendingEmail,          // ← expose ra
-        setPendingEmail        // ← expose setter
-      }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

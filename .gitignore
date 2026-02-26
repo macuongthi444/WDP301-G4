@@ -54,7 +54,12 @@ build/
 # Yarn Integrity file
 .yarn-integrity
 
-git add .env
+# dotenv environment variables file
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Stores VSCode settings
 .vscode/

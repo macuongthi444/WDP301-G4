@@ -43,13 +43,15 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Hàm login - được gọi từ LoginPage sau khi API login thành công
-  const login = (userData) => {
-    // userData từ backend: { id, email, full_name, roles: [...] }
-    setUser(userData);
-    setUserRoles(userData.roles || []);
-    setIsLoggedIn(true);
-    // Token đã được lưu trong LoginPage → interceptor sẽ tự dùng
-  };
+  // src/context/AuthContext.jsx (hoặc ./contexts/AuthContext.jsx)
+const login = (token, userData) => {
+  if (token) {
+    localStorage.setItem('token', token);
+  }
+  setUser(userData);
+  setUserRoles(userData.roles || []);
+  setIsLoggedIn(true);
+};
 
   // Hàm logout
   const logout = () => {
@@ -68,6 +70,14 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
+    hasRole: (role) => {                          // ← THÊM ĐOẠN NÀY
+    if (!userRoles || userRoles.length === 0) return false;
+    const upperRole = role.toUpperCase();
+    return userRoles.some(r => 
+      String(r).toUpperCase() === upperRole ||
+      String(r).toUpperCase() === `ROLE_${upperRole}`
+    );
+  },
   };
 
   return (
@@ -84,18 +94,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-export const register = async (fullName, email, password, phone) => {
-  try {
-    const response = await api.post('/auth/register', {
-      full_name: fullName,
-      email,
-      password,
-      phone: phone || undefined, // optional
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Đăng ký thất bại');
-  }
 };

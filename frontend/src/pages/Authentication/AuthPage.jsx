@@ -1,18 +1,18 @@
 // src/pages/Authentication/AuthPage.jsx
-import { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
-import { AuthContext } from '../../context/AuthContext';
-import './css/AuthPage.css';
+import { useState, useEffect, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
+import "./css/AuthPage.css";
 
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const AuthPage = () => {
-  const { mode = 'login' } = useParams();
+  const { mode = "login" } = useParams();
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  const isRegister = mode === 'register';
+  const isRegister = mode === "register";
   const [rightPanelActive, setRightPanelActive] = useState(isRegister);
 
   useEffect(() => {
@@ -23,29 +23,29 @@ const AuthPage = () => {
   }, [isRegister]);
 
   // Login
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [loginError, setLoginError] = useState('');
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginError, setLoginError] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Register
   const [registerData, setRegisterData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    roleNames: 'STUDENT',
+    full_name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    roleNames: "STUDENT",
   });
-  const [registerError, setRegisterError] = useState('');
+  const [registerError, setRegisterError] = useState("");
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setLoginError('');
+    setLoginError("");
 
     try {
-      const res = await api.post('/auth/login', loginData);
+      const res = await api.post("/auth/login", loginData);
 
       // Giả sử backend trả về: { token, user: { _id, full_name, email, roleNames: ['TUTOR'] hoặc ['STUDENT'] } }
       const { token, user } = res.data;
@@ -54,30 +54,33 @@ const AuthPage = () => {
       login(token, user);
 
       // Redirect theo role (roleNames là array, lấy role đầu tiên)
-      const role = user.roles?.[0] || 'STUDENT';
+      const role = user.roles?.[0] || "STUDENT";
 
-      if (role === 'TUTOR') {
-        navigate('/dashboard'); // Trang quản lý lớp cho tutor
+      if (role === "TUTOR") {
+        navigate("/dashboard"); // Trang quản lý lớp cho tutor
       } else {
-        navigate('/student-dashboard'); // Trang cho học viên (tạo sau nếu chưa có)
+        navigate("/student-dashboard"); // Trang cho học viên (tạo sau nếu chưa có)
         // Hoặc '/my-classes', '/home', tùy theo thiết kế của bạn
       }
     } catch (err) {
-      setLoginError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.');
+      setLoginError(
+        err.response?.data?.message ||
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.",
+      );
     }
   };
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    setRegisterError('');
+    setRegisterError("");
 
     if (registerData.password !== registerData.confirmPassword) {
-      setRegisterError('Mật khẩu nhập lại không khớp');
+      setRegisterError("Mật khẩu nhập lại không khớp");
       return;
     }
 
     try {
-      const res = await api.post('/auth/register', {
+      const res = await api.post("/auth/register", {
         full_name: registerData.full_name,
         email: registerData.email,
         password: registerData.password,
@@ -85,23 +88,43 @@ const AuthPage = () => {
         roleNames: [registerData.roleNames], // backend mong đợi array
       });
 
-      alert(res.data.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực.');
-      navigate('/verify-email');
+      alert(
+        res.data.message ||
+          "Đăng ký thành công! Vui lòng kiểm tra email để xác thực.",
+      );
+      navigate("/verify-email");
     } catch (err) {
-      setRegisterError(err.response?.data?.message || 'Đăng ký thất bại. Email có thể đã tồn tại.');
+      setRegisterError(
+        err.response?.data?.message ||
+          "Đăng ký thất bại. Email có thể đã tồn tại.",
+      );
     }
   };
 
   return (
-    <div className={`container ${rightPanelActive ? 'right-panel-active' : ''}`}>
+    <div
+      className={`container ${rightPanelActive ? "right-panel-active" : ""}`}
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+      }}
+    >
       {/* FORM ĐĂNG NHẬP */}
       <div className="form-container sign-in-container">
         <form onSubmit={handleLoginSubmit}>
           <h1>Đăng Nhập</h1>
           <div className="social-container">
-            <a href="#" className="social"><i className="fab fa-facebook-f"></i></a>
-            <a href="#" className="social"><i className="fab fa-google"></i></a>
-            <a href="#" className="social"><i className="fab fa-linkedin-in"></i></a>
+            <a href="#" className="social">
+              <i className="fab fa-facebook-f"></i>
+            </a>
+            <a href="#" className="social">
+              <i className="fab fa-google"></i>
+            </a>
+            <a href="#" className="social">
+              <i className="fab fa-linkedin-in"></i>
+            </a>
           </div>
           <span>hoặc sử dụng tài khoản của bạn</span>
 
@@ -111,16 +134,20 @@ const AuthPage = () => {
             type="email"
             placeholder="Email"
             value={loginData.email}
-            onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+            onChange={(e) =>
+              setLoginData({ ...loginData, email: e.target.value })
+            }
             required
           />
 
           <div className="relative password-field">
             <input
-              type={showLoginPassword ? 'text' : 'password'}
+              type={showLoginPassword ? "text" : "password"}
               placeholder="Mật khẩu"
               value={loginData.password}
-              onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+              onChange={(e) =>
+                setLoginData({ ...loginData, password: e.target.value })
+              }
               required
             />
             <button
@@ -142,9 +169,15 @@ const AuthPage = () => {
         <form onSubmit={handleRegisterSubmit}>
           <h1>Tạo Tài Khoản</h1>
           <div className="social-container">
-            <a href="#" className="social"><i className="fab fa-facebook-f"></i></a>
-            <a href="#" className="social"><i className="fab fa-google"></i></a>
-            <a href="#" className="social"><i className="fab fa-linkedin-in"></i></a>
+            <a href="#" className="social">
+              <i className="fab fa-facebook-f"></i>
+            </a>
+            <a href="#" className="social">
+              <i className="fab fa-google"></i>
+            </a>
+            <a href="#" className="social">
+              <i className="fab fa-linkedin-in"></i>
+            </a>
           </div>
           <span>hoặc sử dụng email để đăng ký</span>
 
@@ -153,23 +186,29 @@ const AuthPage = () => {
           <input
             placeholder="Họ và tên"
             value={registerData.full_name}
-            onChange={(e) => setRegisterData({ ...registerData, full_name: e.target.value })}
+            onChange={(e) =>
+              setRegisterData({ ...registerData, full_name: e.target.value })
+            }
             required
           />
           <input
             type="email"
             placeholder="Email"
             value={registerData.email}
-            onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+            onChange={(e) =>
+              setRegisterData({ ...registerData, email: e.target.value })
+            }
             required
           />
 
           <div className="relative password-field">
             <input
-              type={showRegisterPassword ? 'text' : 'password'}
+              type={showRegisterPassword ? "text" : "password"}
               placeholder="Mật khẩu"
               value={registerData.password}
-              onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+              onChange={(e) =>
+                setRegisterData({ ...registerData, password: e.target.value })
+              }
               required
             />
             <button
@@ -183,10 +222,15 @@ const AuthPage = () => {
 
           <div className="relative password-field">
             <input
-              type={showConfirmPassword ? 'text' : 'password'}
+              type={showConfirmPassword ? "text" : "password"}
               placeholder="Nhập lại mật khẩu"
               value={registerData.confirmPassword}
-              onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+              onChange={(e) =>
+                setRegisterData({
+                  ...registerData,
+                  confirmPassword: e.target.value,
+                })
+              }
               required
             />
             <button
@@ -201,12 +245,16 @@ const AuthPage = () => {
           <input
             placeholder="Số điện thoại (tùy chọn)"
             value={registerData.phone}
-            onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+            onChange={(e) =>
+              setRegisterData({ ...registerData, phone: e.target.value })
+            }
           />
 
           <select
             value={registerData.roleNames}
-            onChange={(e) => setRegisterData({ ...registerData, roleNames: e.target.value })}
+            onChange={(e) =>
+              setRegisterData({ ...registerData, roleNames: e.target.value })
+            }
           >
             <option value="STUDENT">Học sinh / Phụ huynh</option>
             <option value="TUTOR">Gia sư / Giáo viên</option>
@@ -227,7 +275,7 @@ const AuthPage = () => {
               type="button"
               onClick={() => {
                 setRightPanelActive(false);
-                navigate('/auth/login', { replace: true });
+                navigate("/auth/login", { replace: true });
               }}
             >
               Đăng Nhập
@@ -242,7 +290,7 @@ const AuthPage = () => {
               type="button"
               onClick={() => {
                 setRightPanelActive(true);
-                navigate('/auth/register', { replace: true });
+                navigate("/auth/register", { replace: true });
               }}
             >
               Đăng Ký

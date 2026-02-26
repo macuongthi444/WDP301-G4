@@ -29,14 +29,17 @@ exports.protect = async (req, res, next) => {
 
 exports.authorize = (...allowedRoles) => {
   return (req, res, next) => {
-    const userRoles = req.user.roles.map(role => role.name);
-
-    const hasPermission = allowedRoles.some(role => userRoles.includes(role));
-
-    if (!hasPermission) {
-      return res.status(403).json({ message: 'Bạn không có quyền truy cập' });
+    if (!req.user || !req.user.roles) {
+      return res.status(403).json({ message: 'Không có quyền truy cập' });
     }
 
+    const hasPermission = req.user.roles.some(role => 
+      allowedRoles.includes(role) || allowedRoles.includes(role.name)
+    );
+
+    if (!hasPermission) {
+      return res.status(403).json({ message: 'Chỉ gia sư mới có quyền thực hiện hành động này' });
+    }
     next();
   };
 };

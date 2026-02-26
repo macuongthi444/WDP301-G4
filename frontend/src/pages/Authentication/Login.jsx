@@ -2,53 +2,44 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
-import { toastSuccess, toastError } from '../../utils/toast'; // nếu có
+import { toastError } from '../../utils/toast'; // giữ nếu dùng
 import { Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
 
-  const { isLoggedIn, login, userRoles } = useAuth();
+  const navigate = useNavigate();
+  const { isLoggedIn, login, userRoles, hasRole } = useAuth();
 
   // Redirect nếu đã login
-  const redirectBasedOnRole = (roles = []) => {
-    console.log("Redirecting based on roles:", roles);
-    let redirectPath = "/";
-    if (!Array.isArray(roles)) roles = [];
+  useEffect(() => {
+    if (isLoggedIn) {
+      redirectBasedOnRole();
+    }
+  }, [isLoggedIn]);
 
-    const hasAdminRole = roles.some(
-      (role) =>
-        typeof role === "string" &&
-        (role.toUpperCase() === "ROLE_ADMIN" || role.toUpperCase() === "ADMIN")
-    );
-    const hasSellerRole = roles.some(
-      (role) =>
-        typeof role === "string" &&
-        (role.toUpperCase() === "ROLE_SELLER" || role.toUpperCase() === "SELLER")
-    );
+  const redirectBasedOnRole = () => {
+    const roles = userRoles || [];
 
-    if (hasAdminRole) redirectPath = "/admin";
-    else if (hasSellerRole) redirectPath = "/seller";
+    // Kiểm tra role tutor (backend trả "TUTOR" hoặc "ROLE_TUTOR")
+    if (hasRole?.('TUTOR') || hasRole?.('tutor') || 
+        roles.some(r => String(r).toUpperCase().includes('TUTOR'))) {
+      navigate('/tutor');          
+    }
 
-    navigate(redirectPath);
+    if (hasRole?.('ADMIN') || roles.some(r => String(r).toUpperCase().includes('ADMIN'))) {
+      navigate('/admin');
+      return;
+    }
+
+    navigate('/');
   };
 
-  useEffect(() => {
-    if (isLoggedIn && userRoles) {
-      redirectBasedOnRole(userRoles);
-    }
-  }, [isLoggedIn, userRoles, navigate]);
-
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
@@ -57,64 +48,54 @@ const LoginPage = () => {
     setError("");
 
     try {
-      const response = await api.post("/auth/login", {
-        email: formData.email,
-        password: formData.password,
-      });
-
+      const response = await api.post("/auth/login", formData);
       const { token, user } = response.data;
 
-      localStorage.setItem("token", token);
-      login(user);
+      login(token, user);                    // ← Phải truyền cả token + user
+      redirectBasedOnRole();                 // Redirect ngay sau login
 
-      redirectBasedOnRole(user.roles || []);
     } catch (err) {
-      console.error("Login error:", err);
-      const errorMsg =
-        err.response?.data?.message ||
-        err.message ||
-        "Đăng nhập thất bại. Vui lòng kiểm tra email/mật khẩu.";
+      const errorMsg = err.response?.data?.message || "Đăng nhập thất bại";
       setError(errorMsg);
-      toastError(errorMsg); // nếu dùng toast
+      toastError?.(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
+  if (isLoggedIn) {
+    return <div className="min-h-screen flex items-center justify-center">Đang chuyển hướng...</div>;
+  }
+
   return (
     <div className="flex h-screen w-full bg-gradient-to-br from-blue-100 to-cream-100">
       {/* Left side - Decorative */}
-      <div className="w-5/12 bg-blue-300 flex items-center p-16 relative overflow-hidden animate__animated animate__fadeIn animate__slow">
+      <div className="w-5/12 bg-blue-300 flex items-center p-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative z-10">
-          <h1 className="text-white text-5xl font-bold leading-tight font-playfair animate__animated animate__fadeInDown">
-            Tutor<br />
-            Note Web<br />
-            Welcome Back
+          <h1 className="text-white text-5xl font-bold leading-tight font-playfair">
+            Tutor<br />Note Web<br />Welcome Back
           </h1>
         </div>
-        <img
-          src="" // Thay bằng ảnh thật nếu có
-          alt="Decorative"
-          className="absolute right-0 bottom-0 h-auto opacity-80"
-        />
+        {/* Nếu có ảnh decorative thì thêm src thật */}
+        {/* <img src="..." alt="Decorative" className="absolute right-0 bottom-0 h-auto opacity-80" /> */}
       </div>
 
       {/* Right side - Login Form */}
       <div className="w-7/12 flex items-center justify-center bg-cream-50">
-        <div className="w-full max-w-md px-8 py-10 bg-white rounded-lg shadow-lg animate__animated animate__slideInRight">
-          <h2 className="text-3xl font-bold text-pink-600 mb-8 font-playfair animate__animated animate__fadeIn">
+        <div className="w-full max-w-md px-8 py-10 bg-white rounded-lg shadow-lg">
+          <h2 className="text-3xl font-bold text-pink-600 mb-8 font-playfair">
             Đăng nhập
           </h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded animate__animated animate__shakeX">
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
               {error}
             </div>
           )}
 
           <form className="space-y-8" onSubmit={handleSubmit}>
-            {/* Email */}
+            {/* Email field */}
             <div className="relative">
               <input
                 type="email"
@@ -125,6 +106,7 @@ const LoginPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                autoComplete="email"
               />
               <label
                 htmlFor="email"
@@ -135,11 +117,10 @@ const LoginPage = () => {
               </label>
             </div>
 
-            {/* Password */}
+            {/* Password field */}
             <div className="relative">
-              <div className="flex items-center border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-pink-400 transition-all duration-300
-                ${error ? 'border-red-500' : 'border-pink-300'}">
-                
+              <div className={`flex items-center border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-pink-400 transition-all duration-300
+                ${error ? 'border-red-500' : 'border-pink-300'}`}>
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
@@ -149,8 +130,8 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  autoComplete="current-password"
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -171,7 +152,7 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 text-white font-medium rounded-md transition transform hover:scale-105 animate__animated animate__pulse animate__infinite animate__slow flex items-center justify-center mt-6"
+              className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 text-white font-medium rounded-md transition transform hover:scale-105 flex items-center justify-center mt-6"
               disabled={loading}
             >
               {loading ? (
@@ -182,30 +163,16 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Links dưới form */}
-          <div className="mt-6 text-center space-y-2">
-            <a
-              href="/forgot-password"
-              className="text-pink-600 hover:underline text-sm font-medium transition hover:text-pink-700"
-            >
+          <div className="mt-6 text-center space-y-2 text-sm">
+            <a href="/forgot-password" className="text-pink-600 hover:underline block">
               Quên mật khẩu?
             </a>
-            <div>
-              <a
-                href="/register"
-                className="text-pink-600 hover:underline text-sm font-medium transition hover:text-pink-700"
-              >
-                Tạo tài khoản mới
-              </a>
-            </div>
-            <div>
-              <a
-                href="/"
-                className="text-pink-600 hover:underline text-sm font-medium transition hover:text-pink-700"
-              >
-                Về trang chủ
-              </a>
-            </div>
+            <a href="/register" className="text-pink-600 hover:underline block">
+              Tạo tài khoản mới
+            </a>
+            <a href="/" className="text-pink-600 hover:underline block">
+              Về trang chủ
+            </a>
           </div>
         </div>
       </div>

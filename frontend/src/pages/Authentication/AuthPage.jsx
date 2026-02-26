@@ -1,33 +1,25 @@
 // src/pages/Authentication/AuthPage.jsx
-import { useState, useEffect, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import './css/AuthPage.css';
 
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-
 const AuthPage = () => {
   const { mode = 'login' } = useParams();
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
+  const { login, setPendingEmail } = useContext(AuthContext);
 
   const isRegister = mode === 'register';
   const [rightPanelActive, setRightPanelActive] = useState(isRegister);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setRightPanelActive(isRegister);
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [isRegister]);
-
-  // Login
+  // Login states
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [showLoginPass, setShowLoginPass] = useState(false);
 
-  // Register
+  // Register states
   const [registerData, setRegisterData] = useState({
     full_name: '',
     email: '',
@@ -37,42 +29,41 @@ const AuthPage = () => {
     roleNames: 'STUDENT',
   });
   const [registerError, setRegisterError] = useState('');
-  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isRegisterLoading, setIsRegisterLoading] = useState(false);
+  const [showRegPass, setShowRegPass] = useState(false);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
+    setIsLoginLoading(true); // Bật loading
 
     try {
       const res = await api.post('/auth/login', loginData);
-
-      // Giả sử backend trả về: { token, user: { _id, full_name, email, roleNames: ['TUTOR'] hoặc ['STUDENT'] } }
       const { token, user } = res.data;
 
-      // Lưu thông tin user vào context
       login(token, user);
 
-      // Redirect theo role (roleNames là array, lấy role đầu tiên)
       const role = user.roles?.[0] || 'STUDENT';
-
       if (role === 'TUTOR') {
-        navigate('/dashboard'); // Trang quản lý lớp cho tutor
+        navigate('/dashboard', { replace: true });
       } else {
-        navigate('/student-dashboard'); // Trang cho học viên (tạo sau nếu chưa có)
-        // Hoặc '/my-classes', '/home', tùy theo thiết kế của bạn
+        navigate('/student-dashboard', { replace: true });
       }
     } catch (err) {
-      setLoginError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.');
+      setLoginError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
+    } finally {
+      setIsLoginLoading(false); // Tắt loading dù thành công hay thất bại
     }
   };
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setRegisterError('');
+    setIsRegisterLoading(true);
 
     if (registerData.password !== registerData.confirmPassword) {
       setRegisterError('Mật khẩu nhập lại không khớp');
+      setIsRegisterLoading(false);
       return;
     }
 
@@ -82,13 +73,29 @@ const AuthPage = () => {
         email: registerData.email,
         password: registerData.password,
         phone: registerData.phone,
-        roleNames: [registerData.roleNames], // backend mong đợi array
+        roleNames: [registerData.roleNames],
       });
 
+      // Lưu email để verify không cần nhập lại
+      setPendingEmail(registerData.email);
+
       alert(res.data.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực.');
-      navigate('/verify-email');
+
+      // Reset form
+      setRegisterData({
+        full_name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        phone: '',
+        roleNames: 'STUDENT',
+      });
+
+      navigate('/verify-email', { replace: true });
     } catch (err) {
       setRegisterError(err.response?.data?.message || 'Đăng ký thất bại. Email có thể đã tồn tại.');
+    } finally {
+      setIsRegisterLoading(false);
     }
   };
 
@@ -98,12 +105,6 @@ const AuthPage = () => {
       <div className="form-container sign-in-container">
         <form onSubmit={handleLoginSubmit}>
           <h1>Đăng Nhập</h1>
-          <div className="social-container">
-            <a href="#" className="social"><i className="fab fa-facebook-f"></i></a>
-            <a href="#" className="social"><i className="fab fa-google"></i></a>
-            <a href="#" className="social"><i className="fab fa-linkedin-in"></i></a>
-          </div>
-          <span>hoặc sử dụng tài khoản của bạn</span>
 
           {loginError && <p className="error-message">{loginError}</p>}
 
@@ -113,27 +114,39 @@ const AuthPage = () => {
             value={loginData.email}
             onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
             required
+            disabled={isLoginLoading}
           />
 
-          <div className="relative password-field">
-            <input
-              type={showLoginPassword ? 'text' : 'password'}
-              placeholder="Mật khẩu"
-              value={loginData.password}
-              onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-              required
-            />
-            <button
-              type="button"
-              className="toggle-password"
-              onClick={() => setShowLoginPassword(!showLoginPassword)}
-            >
-              {showLoginPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
+          <input
+            type={showLoginPass ? 'text' : 'password'}
+            placeholder="Mật khẩu"
+            value={loginData.password}
+            onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+            required
+            disabled={isLoginLoading}
+          />
+
+          <div className="checkbox-container">
+            <label>
+              <input
+                type="checkbox"
+                checked={showLoginPass}
+                onChange={() => setShowLoginPass(!showLoginPass)}
+                disabled={isLoginLoading}
+              />
+              Hiển thị mật khẩu
+            </label>
           </div>
 
           <a href="/forgot-password">Quên mật khẩu?</a>
-          <button type="submit">Đăng Nhập</button>
+
+          <button
+            type="submit"
+            disabled={isLoginLoading}
+            className={isLoginLoading ? 'opacity-70 cursor-not-allowed' : ''}
+          >
+            {isLoginLoading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
+          </button>
         </form>
       </div>
 
@@ -141,12 +154,6 @@ const AuthPage = () => {
       <div className="form-container sign-up-container">
         <form onSubmit={handleRegisterSubmit}>
           <h1>Tạo Tài Khoản</h1>
-          <div className="social-container">
-            <a href="#" className="social"><i className="fab fa-facebook-f"></i></a>
-            <a href="#" className="social"><i className="fab fa-google"></i></a>
-            <a href="#" className="social"><i className="fab fa-linkedin-in"></i></a>
-          </div>
-          <span>hoặc sử dụng email để đăng ký</span>
 
           {registerError && <p className="error-message">{registerError}</p>}
 
@@ -155,64 +162,71 @@ const AuthPage = () => {
             value={registerData.full_name}
             onChange={(e) => setRegisterData({ ...registerData, full_name: e.target.value })}
             required
+            disabled={isRegisterLoading}
           />
+
           <input
             type="email"
             placeholder="Email"
             value={registerData.email}
             onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
             required
+            disabled={isRegisterLoading}
           />
 
-          <div className="relative password-field">
-            <input
-              type={showRegisterPassword ? 'text' : 'password'}
-              placeholder="Mật khẩu"
-              value={registerData.password}
-              onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-              required
-            />
-            <button
-              type="button"
-              className="toggle-password"
-              onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-            >
-              {showRegisterPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
+          <input
+            type={showRegPass ? 'text' : 'password'}
+            placeholder="Mật khẩu"
+            value={registerData.password}
+            onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+            required
+            disabled={isRegisterLoading}
+          />
 
-          <div className="relative password-field">
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              placeholder="Nhập lại mật khẩu"
-              value={registerData.confirmPassword}
-              onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-              required
-            />
-            <button
-              type="button"
-              className="toggle-password"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
+          <input
+            type={showRegPass ? 'text' : 'password'}
+            placeholder="Nhập lại mật khẩu"
+            value={registerData.confirmPassword}
+            onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+            required
+            disabled={isRegisterLoading}
+          />
+
+          <div className="checkbox-container">
+            <label>
+              <input
+                type="checkbox"
+                checked={showRegPass}
+                onChange={() => setShowRegPass(!showRegPass)}
+                disabled={isRegisterLoading}
+              />
+              Hiển thị mật khẩu
+            </label>
           </div>
 
           <input
             placeholder="Số điện thoại (tùy chọn)"
             value={registerData.phone}
             onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+            disabled={isRegisterLoading}
           />
 
           <select
             value={registerData.roleNames}
             onChange={(e) => setRegisterData({ ...registerData, roleNames: e.target.value })}
+            disabled={isRegisterLoading}
           >
             <option value="STUDENT">Học sinh / Phụ huynh</option>
             <option value="TUTOR">Gia sư / Giáo viên</option>
           </select>
 
-          <button type="submit">Đăng Ký</button>
+          <button
+            type="submit"
+            disabled={isRegisterLoading}
+            className={isRegisterLoading ? 'opacity-70 cursor-not-allowed' : ''}
+          >
+            {isRegisterLoading ? 'Đang đăng ký...' : 'Đăng Ký'}
+          </button>
         </form>
       </div>
 

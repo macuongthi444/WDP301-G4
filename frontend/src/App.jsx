@@ -1,17 +1,15 @@
 // src/App.jsx
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { useContext, useEffect } from "react";
-import { AuthContext } from "./context/AuthContext";
-import { ClassProvider } from "./context/ClassContext";
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { useContext, useEffect } from 'react';
+import { AuthContext } from './context/AuthContext';
+import { ClassProvider } from './context/ClassContext';
 
-import AuthLayout from "./pages/Authentication/AuthPage";
-import VerifyEmail from "./pages/Authentication/VerifyEmail";
-import ForgotPassword from "./pages/Authentication/ForgotPassword";
-import ResetPassword from "./pages/Authentication/ResetPassword";
-import Dashboard from "./pages/Home/DashboardTutor"; // Trang tutor dashboard
+import AuthLayout from './pages/Authentication/AuthPage';
+import VerifyEmail from './pages/Authentication/VerifyEmail';
+import ForgotPassword from './pages/Authentication/ForgotPassword';
+import ResetPassword from './pages/Authentication/ResetPassword';
+import Dashboard from './pages/Home/DashboardTutor'; // Trang tutor dashboard
 import GuestHome from "./pages/Home/GuestHome";
-
-// import './App.css';
 
 // Layout chung cho tutor (sidebar + header)
 import MainLayout from './components/layout/MainLayout';
@@ -24,39 +22,45 @@ function AppContent() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (loading) return;
+  if (loading) return;
 
-    const path = window.location.pathname;
+  // Danh sách các đường dẫn KHÔNG được redirect về login
+  const publicPaths = [
+    '/auth', '/auth/login', '/auth/register',
+    '/verify-email',
+    '/forgot-password', '/reset-password'
+  ];
 
-    // Nếu chưa đăng nhập: chỉ chặn các trang cần auth
-    if (!user) {
-      const protectedPrefixes = ["/dashboard", "/classes"];
-      const isProtected = protectedPrefixes.some((p) => path.startsWith(p));
-      if (isProtected) navigate("/auth/login", { replace: true });
-      return;
+  const currentPath = window.location.pathname;
+
+  if (!user) {
+    // Chỉ redirect nếu KHÔNG nằm trong public paths
+    const isPublicPath = publicPaths.some(p => 
+      currentPath === p || currentPath.startsWith(p + '/')
+    );
+
+    if (!isPublicPath) {
+      console.log('Redirect to /auth because not logged in and not on public path');
+      navigate('/', { replace: true });
     }
+    return;
+  }
 
-    // Nếu đã đăng nhập: điều hướng theo role khi ở trang guest/auth
-    const isGuestOrAuth =
-      path === "/" ||
-      path.startsWith("/auth") ||
-      path === "/verify-email" ||
-      path === "/forgot-password" ||
-      path === "/reset-password";
-
-    if (user.roles?.includes("TUTOR")) {
-      if (isGuestOrAuth) navigate("/dashboard", { replace: true });
-    } else if (user.roles?.includes("STUDENT")) {
-      if (isGuestOrAuth) navigate("/student-dashboard", { replace: true });
+  // Đã login → redirect về dashboard phù hợp
+  if (user.roles?.includes('TUTOR')) {
+    if (currentPath === '/' || currentPath.startsWith('/auth')) {
+      navigate('/dashboard', { replace: true });
     }
-  }, [user, loading, navigate]);
+  } else if (user.roles?.includes('STUDENT')) {
+    if (currentPath === '/' || currentPath.startsWith('/auth')) {
+      navigate('/student-dashboard', { replace: true });
+    }
+  }
+
+}, [user, loading, navigate]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        Đang tải...
-      </div>
-    );
+    return <div className="flex min-h-screen items-center justify-center">Đang tải...</div>;
   }
 
   return (
@@ -70,21 +74,15 @@ function AppContent() {
       <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Tutor */}
-      {user && user.roles?.includes("TUTOR") && (
-        <Route
-          element={
-            <ClassProvider>
-              <MainLayout />
-            </ClassProvider>
-          }
-        >
+      {user && user.roles?.includes('TUTOR') && (
+        <Route element={<ClassProvider><MainLayout /></ClassProvider>}>
           <Route path="/dashboard" element={<Dashboard />} />
           {/* <Route path="/classes/:classId/*" element={<ClassDetailLayout />} /> */}
         </Route>
       )}
 
       {/* Student */}
-      {user && user.roles?.includes("STUDENT") && (
+      {user && user.roles?.includes('STUDENT') && (
         <Route path="/student-dashboard" element={<StudentDashboard />} />
       )}
 

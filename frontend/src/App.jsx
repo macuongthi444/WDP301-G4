@@ -1,97 +1,98 @@
-// src/App.jsx
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { useContext, useEffect } from 'react';
-import { AuthContext } from './context/AuthContext';
-import { ClassProvider } from './context/ClassContext';
+// src/App.jsx (hoặc App.js)
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 
-import AuthLayout from './pages/Authentication/AuthPage';
-import VerifyEmail from './pages/Authentication/VerifyEmail';
-import ForgotPassword from './pages/Authentication/ForgotPassword';
-import ResetPassword from './pages/Authentication/ResetPassword';
-import Dashboard from './pages/Home/DashboardTutor'; // Trang tutor dashboard
+// Components
+import Header from './components/Header'; // Header tinh giản của bạn
 
-// Layout chung cho tutor (sidebar + header)
-import MainLayout from './components/layout/MainLayout';
+// Pages
+import HomePage from './pages/Home/Homepage';
 
-// Placeholder student
-const StudentDashboard = () => <div>Trang học viên (đang phát triển)</div>;
+// Auth Pages (khớp với backend router)
+import LoginPage from './pages/Authentication/Login'; // Đăng nhập (POST /auth/login)
+import RegisterPage from './pages/Authentication/Register.jsx'; // Đăng ký (POST /auth/register)
+// import VerifyEmailPage from './pages/Authentication/VerifyEmail.jsx'; // Xác thực OTP email (POST /auth/verify-email)
+// import ForgotPasswordPage from './pages/Authentication/ForgotPassword.jsx'; // Quên mật khẩu (POST /auth/forgot-password)
+// import ResetPasswordPage from './pages/Authentication/ResetPassword.jsx'; // Đặt lại mật khẩu (POST /auth/reset-password)
 
-function AppContent() {
-  const { user, loading } = useContext(AuthContext);
-  const navigate = useNavigate();
+// // Dashboard (tùy role sau khi login thành công)
+// import AdminDashboard from './pages/Admin/AdminDashboard'; // /admin
 
-  useEffect(() => {
-  if (loading) return;
+// Các page khác (comment nếu chưa có)
 
-  // Danh sách các đường dẫn KHÔNG được redirect về login
-  const publicPaths = [
-    '/auth', '/auth/login', '/auth/register',
-    '/verify-email',
-    '/forgot-password', '/reset-password'
+const noHeaderPaths = [
+    "/register",
+    "/login",
+    "/admin",
+    "/forgot-password",
+    "/reset-password",
+    
   ];
-
-  const currentPath = window.location.pathname;
-
-  if (!user) {
-    // Chỉ redirect nếu KHÔNG nằm trong public paths
-    const isPublicPath = publicPaths.some(p => 
-      currentPath === p || currentPath.startsWith(p + '/')
-    );
-
-    if (!isPublicPath) {
-      console.log('Redirect to /auth because not logged in and not on public path');
-      navigate('/auth', { replace: true });
-    }
-    return;
-  }
-
-  // Đã login → redirect về dashboard phù hợp
-  if (user.roles?.includes('TUTOR')) {
-    if (currentPath === '/' || currentPath.startsWith('/auth')) {
-      navigate('/dashboard', { replace: true });
-    }
-  } else if (user.roles?.includes('STUDENT')) {
-    if (currentPath === '/' || currentPath.startsWith('/auth')) {
-      navigate('/student-dashboard', { replace: true });
-    }
-  }
-
-}, [user, loading, navigate]);
-
-  if (loading) {
-    return <div className="flex min-h-screen items-center justify-center">Đang tải...</div>;
-  }
-
-  return (
-    <Routes>
-      {/* Public */}
-      <Route path="/auth/:mode?" element={<AuthLayout />} />
-      <Route path="/auth" element={<AuthLayout />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-
-      {/* Tutor */}
-      {user && user.roles?.includes('TUTOR') && (
-        <Route element={<ClassProvider><MainLayout /></ClassProvider>}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* <Route path="/classes/:classId/*" element={<ClassDetailLayout />} /> */}
-        </Route>
-      )}
-
-      {/* Student */}
-      {user && user.roles?.includes('STUDENT') && (
-        <Route path="/student-dashboard" element={<StudentDashboard />} />
-      )}
-
-      {/* Root */}
-      <Route path="*" element={<div>404 - Không tìm thấy</div>} />
-    </Routes>
-  );
-}
-
+ const noHeaderPage =
+    noHeaderPaths.includes(location.pathname) ||
+    location.pathname.startsWith("/admin/");
+  const noRedirectPaths = [
+    "/login",
+    "/register",
+    "/admin",
+    "/seller-dashboard",
+    "/forgot-password",
+    "/reset-password",
+    
+  ];
 function App() {
-  return <AppContent />;
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans antialiased flex flex-col">
+      {/* Header hiển thị trên mọi trang */}
+           {!noHeaderPage && <Header />}
+
+      {/* Nội dung chính */}
+      <main className="flex-grow">
+        <Routes>
+          {/* Trang chủ */}
+          <Route path="/" element={<HomePage />} />
+
+          {/* Auth Routes - khớp backend */}
+          <Route path="/login" element={<LoginPage />} />
+           <Route path="/register" element={<RegisterPage />} />
+          {/* <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />  */}
+
+          {/* Dashboard theo role (sẽ redirect từ login) */}
+          {/* <Route path="/admin" element={<AdminDashboard />} /> */}
+         
+
+          {/* Các route sản phẩm (thêm khi có page) */}
+     
+          {/* <Route path="/products/:id" element={<ProductDetail />} /> */}
+          {/* <Route path="/cart" element={<CartPage />} /> */}
+
+          {/* 404 */}
+          <Route
+            path="*"
+            element={
+              <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+                <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
+                <p className="text-xl text-gray-600 mb-8">Trang không tồn tại</p>
+                <a
+                  href="/"
+                  className="px-8 py-4 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition"
+                >
+                  Về trang chủ
+                </a>
+              </div>
+            }
+          />
+        </Routes>
+      </main>
+
+      {/* Footer tùy chọn */}
+      {/* <footer className="bg-gray-800 text-white py-6 text-center mt-auto">
+        © {new Date().getFullYear()} CloudCake
+      </footer> */}
+    </div>
+  );
 }
 
 export default App;

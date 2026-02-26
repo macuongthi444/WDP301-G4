@@ -232,3 +232,23 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
+exports.getMe = async (req, res) => {
+  try {
+    // req.user được set từ middleware verifyToken
+    const user = await User.findById(req.user.id).populate('roles', 'name');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({
+      user: {
+        id: user._id,
+        email: user.email,
+        full_name: user.full_name,
+        phone: user.phone,
+        roles: user.roles.map(role => role.name),
+        status: user.status,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};

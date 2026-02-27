@@ -234,10 +234,10 @@ const TutorStudents = () => {
       {/* Table */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="grid grid-cols-12 gap-4 bg-slate-100 px-6 py-4 text-base font-extrabold text-slate-800">
-          <div className="col-span-3">Tên</div>
+          {/* Hiển thị tên, khối và lớp. Bỏ cột ngày học */}
+          <div className="col-span-4">Tên</div>
           <div className="col-span-2">Khối</div>
-          <div className="col-span-3">Lớp</div>
-          <div className="col-span-2">Ngày học</div>
+          <div className="col-span-4">Lớp</div>
           <div className="col-span-2">Trạng thái</div>
         </div>
 
@@ -256,10 +256,9 @@ const TutorStudents = () => {
                   key={s?._id || s?.id || idx}
                   className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-slate-50"
                 >
-                  <div className="col-span-3 text-sm font-semibold text-slate-900">{getName(s)}</div>
+                  <div className="col-span-4 text-sm font-semibold text-slate-900">{getName(s)}</div>
                   <div className="col-span-2 text-sm text-slate-700">{getGrade(s)}</div>
-                  <div className="col-span-3 text-sm text-slate-700">{getClassName(s)}</div>
-                  <div className="col-span-2 text-sm text-slate-700">{getDays(s)}</div>
+                  <div className="col-span-4 text-sm text-slate-700">{getClassName(s)}</div>
                   <div className="col-span-2">
                     <span
                       className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${

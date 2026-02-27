@@ -32,14 +32,14 @@ const HomePage = () => {
       <section className="relative h-[80vh] min-h-[500px]">
         <img
           src={bannerImage}
-          alt="CloudCake Banner"
+          alt=" Banner"
           className="absolute inset-0 w-full h-full object-cover brightness-90"
         />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
           <div className="text-center text-white px-6 max-w-4xl">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg">CloudCake</h1>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg">Tutor Note</h1>
             <p className="text-xl md:text-3xl mb-10 font-light drop-shadow-md">
-              Bánh ngọt tươi mỗi ngày – Tinh tế & Ngon miệng
+             Học Hành
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <button
@@ -52,7 +52,7 @@ const HomePage = () => {
                 onClick={() => navigate('/products')}
                 className="border-2 border-white text-white px-10 py-4 rounded-full font-semibold text-lg hover:bg-white/20 transition"
               >
-                Xem sản phẩm
+                Xem qua
                 <ArrowRight className="inline ml-2" size={20} />
               </button>
             </div>
@@ -63,7 +63,7 @@ const HomePage = () => {
       {/* Thêm nội dung test để chắc chắn có gì đó hiển thị */}
       <section className="py-16 bg-gray-50 text-center">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-bold mb-8">Chào mừng đến với CloudCake!</h2>
+          <h2 className="text-4xl font-bold mb-8">Chào mừng đến với Tutor Note!</h2>
           <p className="text-xl text-gray-700 max-w-3xl mx-auto">
             Hiện tại đang test giao diện. Banner và các phần khác sẽ hiển thị khi load xong.
           </p>

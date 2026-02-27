@@ -265,10 +265,11 @@ const TutorClasses = () => {
       {/* Table */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="grid grid-cols-12 gap-4 bg-slate-100 px-6 py-4 text-base font-extrabold text-slate-800">
+          {/* Hiển thị khối (cấp học) và lớp riêng biệt. Bỏ cột ngày học */}
           <div className="col-span-3">Lớp</div>
+          <div className="col-span-2">Cấp độ</div>
           <div className="col-span-2">Hình thức</div>
-          <div className="col-span-3">Học sinh</div>
-          <div className="col-span-2">Ngày học</div>
+          <div className="col-span-3">Số lượng học sinh</div>
           <div className="col-span-2">Trạng thái</div>
         </div>
 
@@ -291,10 +292,17 @@ const TutorClasses = () => {
                   }}
                   className="grid w-full grid-cols-12 gap-4 px-6 py-4 text-left hover:bg-slate-50"
                 >
+                  {/* Lớp */}
                   <div className="col-span-3 text-sm font-semibold text-slate-900">{cls.name}</div>
+                  {/* Khối */}
+                  <div className="col-span-2 text-sm font-semibold text-slate-900">{cls.level || '-'}</div>
+                  {/* Hình thức học */}
                   <div className="col-span-2 text-sm text-slate-700">{modeLabel(cls.default_mode)}</div>
-                  <div className="col-span-3 text-sm text-slate-700">{studentText(cls)}</div>
-                  <div className="col-span-2 text-sm text-slate-700">{getDaysText(cls)}</div>
+                  {/* Số lượng học sinh */}
+                  <div className="col-span-3 text-sm text-slate-700">
+                    {cls?.enrolled_students?.length || 0} học sinh
+                  </div>
+                  {/* Trạng thái */}
                   <div className="col-span-2">
                     <span
                       className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${

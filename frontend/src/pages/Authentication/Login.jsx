@@ -95,7 +95,7 @@ const LoginPage = () => {
           <div className="mb-6">
             <button
               onClick={() => navigate("/")}
-              className="inline-flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white"
+              className="inline-flex items-center gap-2 text-sm font-medium"
             >
               <ArrowLeft className="h-4 w-4" />
               Về trang chủ
@@ -248,7 +248,7 @@ const LoginPage = () => {
           </div>
 
           {/* Small footer */}
-          <div className="mt-8 text-center text-xs text-white/80">
+          <div className="mt-5 text-center text-xs text-slate-500">
             © {new Date().getFullYear()} Tutor Note
           </div>
         </div>

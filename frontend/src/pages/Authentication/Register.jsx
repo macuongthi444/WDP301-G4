@@ -216,7 +216,7 @@ const RegisterPage = () => {
           <div className="mb-4">
             <button
               onClick={() => navigate("/")}
-              className="inline-flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white"
+              className="inline-flex items-center gap-2 text-sm font-medium"
             >
               <ArrowLeft className="h-4 w-4" />
               Về trang chủ

@@ -4,8 +4,7 @@ const router = express.Router();
 const { protect, authorize } = require('../middlewares/auth.middleware'); // giả sử bạn có middleware auth
 
 const {
-  createManualSession,
-  generateSessionsFromSchedule,
+  getSessionDetail,
   getSessionsByClass,
   updateSessionStatus,
 } = require('../controllers/teachingSession.controller');
@@ -13,12 +12,11 @@ const {
 router.use(protect);           // tất cả route cần đăng nhập
 router.use(authorize('TUTOR'));
 
-router.route('/:classId/sessions')
-  .get(getSessionsByClass)
-  .post(createManualSession);
 
-router.post('/:classId/generate-sessions', generateSessionsFromSchedule);
-
+// src/routes/teachingSession.routes.js
+router.get('/:classId/sessions', getSessionsByClass);
+router.get('/:classId/sessions/:sessionId', getSessionDetail);
 router.patch('/:classId/sessions/:sessionId/status', updateSessionStatus);
 
+// Các route điểm danh, đánh giá, giao bài tập giữ nguyên...
 module.exports = router;

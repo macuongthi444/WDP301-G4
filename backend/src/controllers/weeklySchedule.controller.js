@@ -1,52 +1,103 @@
 // src/controllers/teachingSchedule.controller.js
 const WeeklySchedule = require('../models/weeklySchedule.model');
 const Class = require('../models/class.model');
-
+const ClassEnrollment = require('../models/classEnrollment.model');
 // 1. Tạo lịch dạy mới (Create Teaching Schedule)
 exports.createSchedule = async (req, res) => {
   try {
     const tutorId = req.user._id;
-    const classId = req.params.classId;
+    const { classId } = req.params;
+    const { day_of_week, start_time, end_time, is_active = true, mode = "OFFLINE", location, online_link } = req.body;
 
-    const {
-      day_of_week,
-      start_time,
-      end_time,
-      is_active,
-      mode,
-      location,
-      online_link,
-    } = req.body;
-
-    if (!day_of_week || !start_time || !end_time) {
-      return res.status(400).json({ message: 'Thiếu ngày, giờ bắt đầu hoặc giờ kết thúc' });
-    }
-
-    // Kiểm tra lớp có tồn tại và thuộc tutor
     const classDoc = await Class.findOne({ _id: classId, tutor_user_id: tutorId });
-    if (!classDoc) {
-      return res.status(404).json({ message: 'Không tìm thấy lớp học hoặc bạn không có quyền' });
-    }
+    if (!classDoc) return res.status(404).json({ message: "Không tìm thấy lớp hoặc không có quyền" });
 
     const schedule = new WeeklySchedule({
       class_id: classId,
       day_of_week,
       start_time,
       end_time,
-      is_active: is_active !== undefined ? is_active : true,
-      mode: mode || 'OFFLINE',
+      is_active,
+      mode,
       location,
-      online_link,
+      online_link
     });
 
     await schedule.save();
 
+    // Sinh TeachingSession + Attendance cho 12 tuần tới (có thể config số tuần)
+    const weeksToGenerate = 12;
+    const today = new Date();
+    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 1)); // thứ 2 tuần này
+
+    const createdSessions = [];
+    // Thêm vào đầu file weeklySchedule.controller.js (sau các require)
+    async function getActiveStudentsOfClass(classId) {
+      const enrollments = await ClassEnrollment.find({
+        class_id: classId,
+        status: "ACTIVE"
+      });
+      return enrollments.map(enroll => enroll.student_user_id);
+    }
+    for (let w = 0; w < weeksToGenerate; w++) {
+      const weekStart = new Date(startOfWeek);
+      weekStart.setDate(weekStart.getDate() + w * 7);
+
+      const sessionDate = new Date(weekStart);
+      sessionDate.setDate(sessionDate.getDate() + day_of_week);
+
+      const [sh, sm] = start_time.split(':').map(Number);
+      const [eh, em] = end_time.split(':').map(Number);
+
+      const startAt = new Date(sessionDate);
+      startAt.setHours(sh, sm, 0, 0);
+
+      const endAt = new Date(sessionDate);
+      endAt.setHours(eh, em, 0, 0);
+
+      // Kiểm tra trùng
+      const exists = await TeachingSession.findOne({ class_id: classId, start_at: startAt });
+      if (exists) continue;
+
+      const session = new TeachingSession({
+        class_id: classId,
+        schedule_id: schedule._id,
+        start_at: startAt,
+        end_at: endAt,
+        mode,
+        location,
+        online_link,
+        status: "PLANNED",
+        generated_from_schedule: true
+      });
+
+      await session.save();
+
+      // Sinh Attendance mặc định cho học sinh active
+      const activeStudents = await getActiveStudentsOfClass(classId);
+      const attendancePromises = activeStudents.map(studentId => {
+        return new Attendance({
+          session_id: session._id,
+          student_user_id: studentId,
+          status: "NOT_MARKED",
+          note: null,
+          marked_at: null
+        }).save();
+      });
+
+      await Promise.all(attendancePromises);
+
+      createdSessions.push(session);
+    }
+
     res.status(201).json({
-      message: 'Tạo lịch dạy thành công',
-      data: schedule,
+      message: `Tạo lịch tuần thành công. Đã sinh ${createdSessions.length} buổi học và ${activeStudents.length * createdSessions.length} điểm danh mặc định`,
+      schedule,
+      generatedSessionsCount: createdSessions.length
     });
+
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server khi tạo lịch dạy', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 

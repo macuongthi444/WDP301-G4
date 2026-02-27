@@ -2,7 +2,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import TutorSidebar from './TutorSidebar';
-import MainContent from './TutorRoutes';
+import TutorRoutes from './TutorRoutes';
 const TutorLayout = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -13,7 +13,7 @@ const TutorLayout = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <MainContent /> {/* MainContent sẽ render ở đây */}
+        <TutorRoutes /> 
       </main>
     </div>
   );

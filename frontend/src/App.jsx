@@ -10,7 +10,7 @@ import Header from './components/Header';
 import HomePage from './pages/Home/Homepage';
 import LoginPage from './pages/Authentication/Login';
 import RegisterPage from './pages/Authentication/Register';
-// import VerifyEmailPage from ...
+//  import VerifyEmailPage from './pages/Authentication/VerifyEmail'
 // import ForgotPasswordPage from ...
 // import ResetPasswordPage from ...
 
@@ -24,7 +24,7 @@ function App() {
     '/register',
     '/forgot-password',
     '/reset-password',
-    // '/verify-email',
+     '/verify-email',
   ];
 
   const shouldHideHeader = hideHeaderPaths.includes(location.pathname);

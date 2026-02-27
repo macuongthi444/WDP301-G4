@@ -8,7 +8,7 @@ const {
   updateSchedule,
   deleteSchedule,
   ge
-} = require('../controllers/teachingSchedule.controller');
+} = require('../controllers/weeklySchedule.controller');
 
 const { protect, authorize } = require('../middlewares/auth.middleware');
 

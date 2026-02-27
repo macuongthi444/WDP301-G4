@@ -76,19 +76,19 @@ const HomePage = () => {
       {/* Tại sao chọn + CTA giữ nguyên */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-12">Tại sao chọn CloudCake?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Cách sổ tay gia sư hoạt động?</h2>
           <div className="grid md:grid-cols-3 gap-10 text-center">
             <div>
-              <h3 className="text-xl font-semibold mb-4">Tươi mới mỗi ngày</h3>
-              <p className="text-gray-600">Không chất bảo quản, làm mới hàng ngày</p>
+              <h3 className="text-xl font-semibold mb-4">Gia sư tạo buổi học</h3>
+              <p className="text-gray-600">Tạo hoặc xác nhận buổi học đã diễn ra</p>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-4">Tùy chỉnh theo ý bạn</h3>
-              <p className="text-gray-600">Thiết kế bánh theo yêu cầu riêng</p>
+              <h3 className="text-xl font-semibold mb-4">Điểm danh & ghi chú</h3>
+              <p className="text-gray-600">Điểm danh học sinh ghi nhận tình hình</p>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-4">Thợ bánh chuyên nghiệp</h3>
-              <p className="text-gray-600">Đội ngũ giàu kinh nghiệm & tận tâm</p>
+              <h3 className="text-xl font-semibold mb-4">Phu huynh nhận thông báo </h3>
+              <p className="text-gray-600">Hệ thống tự động gửi thông báo xác nhận con đã học</p>
             </div>
           </div>
         </div>

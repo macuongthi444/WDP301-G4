@@ -8,11 +8,11 @@ const TutorStudents = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // UI: search + filter (FE only)
+  // Search/filter UI only
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | ACTIVE | INACTIVE
 
-  // Modal thêm học sinh (backend giữ nguyên)
+  // Modal thêm học sinh
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newStudent, setNewStudent] = useState({
     student_full_name: "",
@@ -116,37 +116,19 @@ const TutorStudents = () => {
     }
   };
 
-  // ---------------- UI helpers (không ảnh hưởng backend) ----------------
+  // ---------------- helpers UI ----------------
   const getName = (s) => s?.full_name || s?.student_full_name || s?.name || "Chưa cập nhật";
   const getGrade = (s) => s?.grade || s?.level || s?.student_grade || "-";
-  const getClassName = (s) =>
-    s?.class_name ||
-    s?.class?.name ||
-    s?.className ||
-    s?.enrolled_class?.name ||
-    "-";
+  const getClassName = (s) => s?.class_name || s?.class?.name || s?.className || "-";
 
   const dayLabel = (d) => {
-    const map = {
-      1: "Thứ 2",
-      2: "Thứ 3",
-      3: "Thứ 4",
-      4: "Thứ 5",
-      5: "Thứ 6",
-      6: "Thứ 7",
-      0: "CN",
-    };
+    const map = { 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4", 4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7", 0: "CN" };
     return map[d] || "-";
   };
 
   const getDays = (s) => {
     const candidates =
-      s?.days_of_week ||
-      s?.days ||
-      s?.day_of_week ||
-      s?.study_days ||
-      s?.schedule_days ||
-      null;
+      s?.days_of_week || s?.days || s?.day_of_week || s?.study_days || s?.schedule_days || null;
 
     if (Array.isArray(candidates) && candidates.length) {
       const uniq = Array.from(new Set(candidates.map((x) => Number(x))));
@@ -160,19 +142,15 @@ const TutorStudents = () => {
   const isActiveStudent = (s) => {
     if (typeof s?.is_active === "boolean") return s.is_active;
     const st = String(s?.status || "").toUpperCase();
-    if (!st) return true; // không có thì coi như hoạt động
+    if (!st) return true;
     return st === "ACTIVE";
   };
 
-  // Stats giống ảnh (phần “chưa hoàn thành bài tập” nếu backend không có -> 0)
   const stats = useMemo(() => {
     const total = students.length;
     const active = students.filter(isActiveStudent).length;
     const inactive = total - active;
-
-    let unfinished = 0; // backend chưa có => 0
-    // nếu sau này có field: unfinished += (s.unfinished_homework_count||0)
-
+    const unfinished = 0;
     return { total, active, inactive, unfinished };
   }, [students]);
 
@@ -187,23 +165,16 @@ const TutorStudents = () => {
       })
       .filter((s) => {
         if (!q) return true;
-        const hay = [
-          getName(s),
-          s?.email || "",
-          String(getGrade(s)),
-          getClassName(s),
-          getDays(s),
-        ]
+        const hay = [getName(s), s?.email || "", String(getGrade(s)), getClassName(s), getDays(s)]
           .join(" ")
           .toLowerCase();
         return hay.includes(q);
       });
   }, [students, query, statusFilter]);
 
-  // ---------------- UI ----------------
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
-      {/* Title + Add button */}
+      {/* Title + Add */}
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-3">
           <User className="mt-1 h-7 w-7 text-slate-900" />
@@ -262,7 +233,6 @@ const TutorStudents = () => {
 
       {/* Table */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {/* Header */}
         <div className="grid grid-cols-12 gap-4 bg-slate-100 px-6 py-4 text-base font-extrabold text-slate-800">
           <div className="col-span-3">Tên</div>
           <div className="col-span-2">Khối</div>
@@ -286,9 +256,7 @@ const TutorStudents = () => {
                   key={s?._id || s?.id || idx}
                   className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-slate-50"
                 >
-                  <div className="col-span-3 text-sm font-semibold text-slate-900">
-                    {getName(s)}
-                  </div>
+                  <div className="col-span-3 text-sm font-semibold text-slate-900">{getName(s)}</div>
                   <div className="col-span-2 text-sm text-slate-700">{getGrade(s)}</div>
                   <div className="col-span-3 text-sm text-slate-700">{getClassName(s)}</div>
                   <div className="col-span-2 text-sm text-slate-700">{getDays(s)}</div>
@@ -308,7 +276,7 @@ const TutorStudents = () => {
         )}
       </div>
 
-      {/* Modal thêm học sinh (backend giữ nguyên, UI gọn & sạch) */}
+      {/* Modal thêm học sinh */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
@@ -320,9 +288,7 @@ const TutorStudents = () => {
             </button>
 
             <h2 className="text-xl font-extrabold text-slate-900">Thêm học sinh</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Nhập thông tin cơ bản, mật khẩu sẽ gửi qua email.
-            </p>
+            <p className="mt-1 text-sm text-slate-500">Nhập thông tin cơ bản, mật khẩu sẽ gửi qua email.</p>
 
             <form onSubmit={handleAddStudent} className="mt-5 space-y-4">
               <div>
@@ -355,9 +321,7 @@ const TutorStudents = () => {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                    Ngày sinh
-                  </label>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ngày sinh</label>
                   <input
                     type="date"
                     name="dob"
@@ -368,9 +332,7 @@ const TutorStudents = () => {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                    Giới tính
-                  </label>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giới tính</label>
                   <select
                     name="gender"
                     value={newStudent.gender}
@@ -400,9 +362,7 @@ const TutorStudents = () => {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                    Lớp / Khối
-                  </label>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Khối</label>
                   <input
                     type="text"
                     name="grade"
@@ -414,9 +374,7 @@ const TutorStudents = () => {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                    Tên lớp
-                  </label>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Lớp</label>
                   <input
                     type="text"
                     name="class_name"
@@ -439,9 +397,8 @@ const TutorStudents = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl bg-gradient-to-r from-emerald-300 to-indigo-400 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:opacity-60 inline-flex items-center gap-2"
+                  className="rounded-xl bg-gradient-to-r from-emerald-300 to-indigo-400 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
                 >
-                  {loading && <Loader2 className="h-5 w-5 animate-spin" />}
                   Thêm học sinh
                 </button>
               </div>

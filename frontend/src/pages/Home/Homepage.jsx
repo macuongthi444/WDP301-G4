@@ -3,36 +3,26 @@ import { useNavigate } from "react-router-dom";
 import { X, Check, Bell } from "lucide-react";
 
 // Ảnh minh hoạ (bạn có thể thay bằng ảnh thật của dự án)
-const heroPersonImg =
-  "https://images.unsplash.com/photo-1580894742597-87bc8789db3d?auto=format&fit=crop&q=80&w=900";
+import heroPersonImg from "../../assets/woman1.png";
 
 const HomePage = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-white">
-      {/* HERO (trừ header) */}
+      {/* HERO*/}
       <section className="relative overflow-hidden">
+        {/* background */}
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-300 via-sky-400 to-indigo-600" />
-        <div className="relative mx-auto max-w-7xl px-6">
-          <div className="grid min-h-[560px] grid-cols-12 items-center gap-8 py-12">
-            {/* Left: person */}
-            <div className="relative col-span-12 md:col-span-4">
-              <div className="relative mx-auto w-full max-w-[360px] md:mx-0">
-                <img
-                  src={heroPersonImg}
-                  alt="Tutor"
-                  className="h-[420px] w-full rounded-2xl object-cover shadow-xl md:h-[460px]"
-                />
-                {/* small label on image */}
-                <div className="absolute left-6 top-28 rounded-full bg-white/20 px-4 py-2 text-sm text-white backdrop-blur">
-                  Quản lý lớp học, theo dõi tiến độ
-                </div>
-              </div>
-            </div>
 
-            {/* Center: text */}
-            <div className="col-span-12 text-center md:col-span-5 md:text-left">
+        {/* decorative blobs */}
+        <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-white/15 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 top-24 h-96 w-96 rounded-full bg-indigo-200/20 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl px-6">
+          <div className="grid min-h-[620px] grid-cols-12 items-center gap-10 py-12 lg:py-16">
+            {/* Center: text (mobile first) */}
+            <div className="order-1 col-span-12 text-center md:order-2 md:col-span-5 md:text-left">
               <h1 className="text-4xl font-extrabold leading-tight text-white md:text-5xl">
                 <span className="block">Kết Nối Gia Sư, Học Sinh</span>
                 <span className="block">Và Phụ Huynh</span>
@@ -41,8 +31,8 @@ const HomePage = () => {
               </h1>
 
               <p className="mt-5 max-w-xl text-sm leading-6 text-white/80 md:text-base">
-                Quản lý lớp học, theo dõi tiến độ và trao đổi thông tin dễ dàng trong
-                một hệ thống giáo dục hiện đại và minh bạch.
+                Quản lý lớp học, theo dõi tiến độ và trao đổi thông tin dễ dàng
+                trong một hệ thống giáo dục hiện đại và minh bạch.
               </p>
 
               <button
@@ -54,9 +44,11 @@ const HomePage = () => {
             </div>
 
             {/* Right: stats card */}
-            <div className="col-span-12 md:col-span-3">
+            <div className="order-2 col-span-12 md:order-3 md:col-span-3">
               <div className="mx-auto w-full max-w-[360px] rounded-2xl bg-white p-6 shadow-xl">
-                <h3 className="text-sm font-semibold text-slate-800">Tổng Quan Hệ Thống</h3>
+                <h3 className="text-sm font-semibold text-slate-800">
+                  Tổng Quan Hệ Thống
+                </h3>
 
                 <div className="mt-4 space-y-4 text-sm">
                   <div className="flex items-center justify-between text-slate-600">
@@ -80,6 +72,22 @@ const HomePage = () => {
                     <span className="font-semibold text-slate-800">3 buổi</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Left: person */}
+            <div className="order-3 col-span-12 md:order-1 md:col-span-4 md:self-end">
+              <div className="relative mx-auto w-full max-w-[380px] md:mx-0">
+                <img
+                  src={heroPersonImg}
+                  alt="Tutor"
+                  className="h-auto w-full max-h-[520px] object-contain drop-shadow-2xl"
+                />
+
+                {/* label
+                <div className="absolute left-6 top-24 rounded-full bg-white/20 px-4 py-2 text-sm text-white backdrop-blur-md ring-1 ring-white/25">
+                  Quản lý lớp học, theo dõi tiến độ
+                </div> */}
               </div>
             </div>
           </div>
@@ -127,8 +135,8 @@ const HomePage = () => {
 
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Mỗi buổi học, gia sư chỉ cần bấm &quot;Điểm danh&quot;. <br />
-                Hệ thống sẽ tự động gửi thông báo cho phụ huynh xác nhận học sinh đã tham
-                gia buổi học.
+                Hệ thống sẽ tự động gửi thông báo cho phụ huynh xác nhận học
+                sinh đã tham gia buổi học.
               </p>
 
               <ul className="mt-4 space-y-2 text-sm text-slate-700">
@@ -152,7 +160,9 @@ const HomePage = () => {
                     <Bell className="h-5 w-5 text-slate-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">Thông báo đã gửi</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      Thông báo đã gửi
+                    </p>
                     <p className="mt-1 text-sm text-slate-600">
                       Con bạn đã tham gia buổi học hôm nay.
                     </p>
@@ -175,7 +185,8 @@ const HomePage = () => {
 
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Chỉ cần nhập câu lệnh, <br />
-                AI sẽ tạo bài tập dựa vào tài liệu đã tải lên phù hợp với trình độ học sinh.
+                AI sẽ tạo bài tập dựa vào tài liệu đã tải lên phù hợp với trình
+                độ học sinh.
               </p>
 
               <ul className="mt-4 space-y-2 text-sm text-slate-700">
@@ -227,14 +238,19 @@ const HomePage = () => {
                   desc: "Hệ thống tự động gửi thông báo xác nhận con đã học.",
                 },
               ].map((s) => (
-                <div key={s.n} className="flex w-full flex-col items-center text-center">
+                <div
+                  key={s.n}
+                  className="flex w-full flex-col items-center text-center"
+                >
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-white">
                     {s.n}
                   </div>
                   <h3 className="mt-6 text-sm font-bold text-slate-900 md:text-base">
                     {s.title}
                   </h3>
-                  <p className="mt-2 max-w-xs text-sm text-slate-600">{s.desc}</p>
+                  <p className="mt-2 max-w-xs text-sm text-slate-600">
+                    {s.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -249,8 +265,8 @@ const HomePage = () => {
             Nâng cấp cách bạn dạy học ngay hôm nay
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-sm text-white/90 md:text-base">
-            Sổ Tay Gia Sư giúp bạn dạy chuyên nghiệp hơn, phụ huynh tin tưởng hơn và học
-            sinh tiến bộ hơn.
+            Sổ Tay Gia Sư giúp bạn dạy chuyên nghiệp hơn, phụ huynh tin tưởng
+            hơn và học sinh tiến bộ hơn.
           </p>
 
           <button

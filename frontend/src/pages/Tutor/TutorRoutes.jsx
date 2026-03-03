@@ -7,8 +7,8 @@ import TutorDashboard from './Dashboard/Dashboard';
 import TutorStudents from './Student/Students';
 import TutorClasses from './Class/Class';
 import TutorSchedule from './Schedule/Schedule';
-import TutorTeachingSession from './TeachingSession/TeachingSession'
 
+import TeachingSessionUIDetail from "./TeachingSession/TeachingSessionUIDetail"; //
 
 // import các page khác...
 
@@ -30,7 +30,9 @@ const TutorRoutes = () => {
       <Route path="students" element={<TutorStudents />} />
       <Route path="classes" element={<TutorClasses />} />
       <Route path="schedule" element={<TutorSchedule />} />
-      <Route path="teaching-session/:sessionId" element={<TutorTeachingSession />} />
+      
+      <Route path="teaching/:classId" element={<TeachingSessionUIDetail />} />
+
       {/* ... */}
       <Route path="*" element={<Navigate to="/tutor" replace />} />
     </Routes>

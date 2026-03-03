@@ -24,58 +24,62 @@ function App() {
     '/register',
     '/forgot-password',
     '/reset-password',
-     '/verify-email',
+    '/verify-email',
   ];
 
   const shouldHideHeader = hideHeaderPaths.includes(location.pathname);
 
   return (
-    
-      <div className="min-h-screen bg-gray-50 font-sans antialiased flex flex-col">
-        {!shouldHideHeader && <Header />}
 
-        <main className="flex-grow">
-          <Routes>
-            {/* Public */}
-            <Route path="/" element={<HomePage />} />
+    <div className="min-h-screen bg-gray-50 font-sans antialiased flex flex-col">
+      {!shouldHideHeader && <Header />}
 
-            {/* Auth */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            {/* <Route path="/verify-email" element={<VerifyEmailPage />} /> */}
-            {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
-            {/* <Route path="/reset-password" element={<ResetPasswordPage />} /> */}
+      <main className="flex-grow">
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<HomePage />} />
 
-            {/* Protected routes theo role */}
-            <Route element={<ProtectedRoute allowedRoles={['TUTOR']} />}>
-              <Route path="/tutor/*" element={<TutorLayout />} />
-            </Route>
+          {/* Auth */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          {/* <Route path="/verify-email" element={<VerifyEmailPage />} /> */}
+          {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
+          {/* <Route path="/reset-password" element={<ResetPasswordPage />} /> */}
 
-            {/* Ví dụ cho role khác (nếu có) */}
-            {/* <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+          {/* Protected routes theo role */}
+          <Route element={<ProtectedRoute allowedRoles={['TUTOR']} />}>
+            <Route path="/tutor/*" element={<TutorLayout />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
+            <Route path="/student" element={<HomePage />} />
+            <Route path="/student/*" element={<HomePage />} />
+          </Route>
+
+          {/* Ví dụ cho role khác (nếu có) */}
+          {/* <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
               <Route path="/admin/*" element={<AdminLayout />} />
             </Route> */}
 
-            {/* Catch-all 404 */}
-            <Route
-              path="*"
-              element={
-                <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
-                  <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
-                  <p className="text-xl text-gray-600 mb-8">Trang không tồn tại</p>
-                  <a
-                    href="/"
-                    className="px-8 py-4 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition"
-                  >
-                    Về trang chủ
-                  </a>
-                </div>
-              }
-            />
-          </Routes>
-        </main>
-      </div>
-   
+          {/* Catch-all 404 */}
+          <Route
+            path="*"
+            element={
+              <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+                <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
+                <p className="text-xl text-gray-600 mb-8">Trang không tồn tại</p>
+                <a
+                  href="/"
+                  className="px-8 py-4 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition"
+                >
+                  Về trang chủ
+                </a>
+              </div>
+            }
+          />
+        </Routes>
+      </main>
+    </div>
+
   );
 }
 

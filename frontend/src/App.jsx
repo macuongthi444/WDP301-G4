@@ -15,7 +15,6 @@ import RegisterPage from './pages/Authentication/Register';
 // import ResetPasswordPage from ...
 
 import TutorLayout from './pages/Tutor/TutorLayout';
-import { Home } from 'lucide-react';
 
 function App() {
   const location = useLocation();
@@ -51,10 +50,6 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['TUTOR']} />}>
               <Route path="/tutor/*" element={<TutorLayout />} />
             </Route>
-            <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
-            <Route path="/student" element={<HomePage />} />
-            <Route path="/student/*" element={<HomePage />} />
-          </Route>
 
             {/* Ví dụ cho role khác (nếu có) */}
             {/* <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

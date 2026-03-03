@@ -1,99 +1,82 @@
-// src/App.jsx
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { useContext, useEffect } from 'react';
-import { AuthContext } from './context/AuthContext';
-import { ClassProvider } from './context/ClassContext';
+import React from 'react';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
-import AuthLayout from './pages/Authentication/AuthPage';
-import VerifyEmail from './pages/Authentication/VerifyEmail';
-import ForgotPassword from './pages/Authentication/ForgotPassword';
-import ResetPassword from './pages/Authentication/ResetPassword';
-import Dashboard from './pages/Home/DashboardTutor'; // Trang tutor dashboard
-import GuestHome from "./pages/Home/GuestHome";
+import ProtectedRoute from './route/ProtectedRoute';
 
-// Layout chung cho tutor (sidebar + header)
-import MainLayout from './components/layout/MainLayout';
+// Components
+import Header from './components/Header';
 
-// Placeholder student
-const StudentDashboard = () => <div>Trang học viên (đang phát triển)</div>;
+// Pages
+import HomePage from './pages/Home/Homepage';
+import LoginPage from './pages/Authentication/Login';
+import RegisterPage from './pages/Authentication/Register';
+//  import VerifyEmailPage from './pages/Authentication/VerifyEmail'
+// import ForgotPasswordPage from ...
+// import ResetPasswordPage from ...
 
-function AppContent() {
-  const { user, loading } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-  if (loading) return;
-
-  // Danh sách các đường dẫn KHÔNG được redirect về login
-  const publicPaths = [
-    '/auth', '/auth/login', '/auth/register',
-    '/verify-email',
-    '/forgot-password', '/reset-password'
-  ];
-
-  const currentPath = window.location.pathname;
-
-  if (!user) {
-    // Chỉ redirect nếu KHÔNG nằm trong public paths
-    const isPublicPath = publicPaths.some(p => 
-      currentPath === p || currentPath.startsWith(p + '/')
-    );
-
-    if (!isPublicPath) {
-      console.log('Redirect to /auth because not logged in and not on public path');
-      navigate('/', { replace: true });
-    }
-    return;
-  }
-
-  // Đã login → redirect về dashboard phù hợp
-  if (user.roles?.includes('TUTOR')) {
-    if (currentPath === '/' || currentPath.startsWith('/auth')) {
-      navigate('/dashboard', { replace: true });
-    }
-  } else if (user.roles?.includes('STUDENT')) {
-    if (currentPath === '/' || currentPath.startsWith('/auth')) {
-      navigate('/student-dashboard', { replace: true });
-    }
-  }
-
-}, [user, loading, navigate]);
-
-  if (loading) {
-    return <div className="flex min-h-screen items-center justify-center">Đang tải...</div>;
-  }
-
-  return (
-    <Routes>
-      {/* Public */}
-      <Route path="/" element={<GuestHome />} />
-      <Route path="/auth/:mode?" element={<AuthLayout />} />
-      <Route path="/auth" element={<AuthLayout />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-
-      {/* Tutor */}
-      {user && user.roles?.includes('TUTOR') && (
-        <Route element={<ClassProvider><MainLayout /></ClassProvider>}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* <Route path="/classes/:classId/*" element={<ClassDetailLayout />} /> */}
-        </Route>
-      )}
-
-      {/* Student */}
-      {user && user.roles?.includes('STUDENT') && (
-        <Route path="/student-dashboard" element={<StudentDashboard />} />
-      )}
-
-      {/* Root */}
-      <Route path="*" element={<div>404 - Không tìm thấy</div>} />
-    </Routes>
-  );
-}
+import TutorLayout from './pages/Tutor/TutorLayout';
 
 function App() {
-  return <AppContent />;
+  const location = useLocation();
+
+  const hideHeaderPaths = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+     '/verify-email',
+  ];
+
+  const shouldHideHeader = hideHeaderPaths.includes(location.pathname);
+
+  return (
+    
+      <div className="min-h-screen bg-gray-50 font-sans antialiased flex flex-col">
+        {!shouldHideHeader && <Header />}
+
+        <main className="flex-grow">
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<HomePage />} />
+
+            {/* Auth */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            {/* <Route path="/verify-email" element={<VerifyEmailPage />} /> */}
+            {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
+            {/* <Route path="/reset-password" element={<ResetPasswordPage />} /> */}
+
+            {/* Protected routes theo role */}
+            <Route element={<ProtectedRoute allowedRoles={['TUTOR']} />}>
+              <Route path="/tutor/*" element={<TutorLayout />} />
+            </Route>
+
+            {/* Ví dụ cho role khác (nếu có) */}
+            {/* <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/admin/*" element={<AdminLayout />} />
+            </Route> */}
+
+            {/* Catch-all 404 */}
+            <Route
+              path="*"
+              element={
+                <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+                  <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
+                  <p className="text-xl text-gray-600 mb-8">Trang không tồn tại</p>
+                  <a
+                    href="/"
+                    className="px-8 py-4 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition"
+                  >
+                    Về trang chủ
+                  </a>
+                </div>
+              }
+            />
+          </Routes>
+        </main>
+      </div>
+   
+  );
 }
 
 export default App;

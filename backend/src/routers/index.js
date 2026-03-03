@@ -9,7 +9,10 @@ const userRoutes = require('./user.routes');
 const classRoutes = require('./class.routes');
 const syllabusRoutes = require('./syllabus.routes');
 const fileResourceRoutes = require('./fileResource.routes');
-const teachingScheduleRoutes = require('./teachingSchedule.routes')
+const weeklyScheduleRoutes = require('./weeklySchedule.routes');
+const studentRoutes =  require('./student.routes');
+const teachingSessionRoutes = require('./teachingSession.routes');
+const attendanceRoutes = require('./attendance.routes');
 // Nếu sau này có thêm router khác, import ở đây
 // Ví dụ:
 // const userRoutes = require('./user.routes');
@@ -22,7 +25,11 @@ router.use('/user', userRoutes);
 router.use('/class', classRoutes);
 router.use('/syllabus', syllabusRoutes);
 router.use('/file-resources', fileResourceRoutes);
-router.use('/class', teachingScheduleRoutes); 
+router.use('/class', weeklyScheduleRoutes); 
+router.use('/students', studentRoutes); 
+router.use('/teaching-sessions',teachingSessionRoutes);
+router.use('/attendance',attendanceRoutes);
+
 // // Thêm các route khác ở đây khi có
 // router.use('/users', userRoutes);
 // router.use('/classes', classRoutes);
@@ -38,6 +45,9 @@ router.get('/', (req, res) => {
       '/api/class',
       '/api/syllabus',
       '/api/file-resources',
+      '/api/students',
+      '/api/teaching-sessions',
+      '/api/attendance',
       // Thêm các endpoint khác khi có
     ]
   });

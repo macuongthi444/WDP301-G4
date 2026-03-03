@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const ATT_STATUS = ["ATTENDED", "ABSENT"];
+const ATT_STATUS = ["ATTENDED", "ABSENT", "NOT_MARKED"];  
 
 const AttendanceSchema = new mongoose.Schema(
   {

@@ -1,60 +1,97 @@
-// src/context/AuthContext.jsx
-import { createContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import api from '../services/api'; // Import axios instance của bạn
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-const [pendingEmail, setPendingEmail] = useState(null); // ← thêm cái này
-  // Hàm login: lưu token + user vào localStorage
-  const login = (token, userData) => {
+  const [userRoles, setUserRoles] = useState([]);
+  const [loading, setLoading] = useState(true); // Để tránh flash khi load
+
+  // Kiểm tra token khi app khởi động
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Gọi API để lấy thông tin user hiện tại (nếu backend có endpoint /auth/me hoặc /users/me)
+        // Nếu backend không có → bạn có thể decode token JWT ở frontend (dùng jwt-decode)
+        // Nhưng khuyến nghị dùng API để lấy info mới nhất
+        const response = await api.get('/auth/me'); // Thay endpoint nếu backend có khác (ví dụ /users/profile)
+
+        const userData = response.data.user || response.data;
+        setUser(userData);
+        setUserRoles(userData.roles || []);
+        setIsLoggedIn(true);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+        setUser(null);
+        setUserRoles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Hàm login - được gọi từ LoginPage sau khi API login thành công
+  // src/context/AuthContext.jsx (hoặc ./contexts/AuthContext.jsx)
+const login = (token, userData) => {
+  if (token) {
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setUser(userData);
-    setPendingEmail(null); // xóa tạm email sau khi login
-  };
+  }
+  setUser(userData);
+  setUserRoles(userData.roles || []);
+  setIsLoggedIn(true);
+};
 
   // Hàm logout
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    delete api.defaults.headers.common['Authorization'];
+    setIsLoggedIn(false);
     setUser(null);
-    setPendingEmail(null);
+    setUserRoles([]);
+    // Có thể redirect về /login nếu cần
   };
 
-  // Load user từ localStorage khi app khởi động (chỉ 1 lần)
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (token && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        setUser(parsedUser);
-      } catch (err) {
-        console.error('Lỗi parse user từ localStorage:', err);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
-    }
-    setLoading(false); // Luôn set loading false để App render
-  }, []); // ← Dependency rỗng: chỉ chạy 1 lần khi mount
+  // Giá trị context cung cấp
+  const value = {
+    isLoggedIn,
+    user,
+    userRoles,
+    loading,
+    login,
+    logout,
+    hasRole: (role) => {                          // ← THÊM ĐOẠN NÀY
+    if (!userRoles || userRoles.length === 0) return false;
+    const upperRole = role.toUpperCase();
+    return userRoles.some(r => 
+      String(r).toUpperCase() === upperRole ||
+      String(r).toUpperCase() === `ROLE_${upperRole}`
+    );
+  },
+  };
 
   return (
-    <AuthContext.Provider value={{ 
-        user, 
-        loading, 
-        login, 
-        logout,
-        pendingEmail,          // ← expose ra
-        setPendingEmail        // ← expose setter
-      }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children} {/* Chỉ render app khi auth check xong */}
     </AuthContext.Provider>
   );
+};
+
+// Hook tiện lợi để dùng context ở bất kỳ component nào
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

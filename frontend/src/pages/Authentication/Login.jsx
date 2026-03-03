@@ -45,17 +45,8 @@ const LoginPage = () => {
       navigate("/admin");
       return;
     }
-    if (
-      hasRole?.("STUDENT") ||
-      hasRole?.("student") ||
-      roles.some(r => r.includes("STUDENT"))
-    ) 
-    {
-      navigate("/student");       
-      return;
-    }
 
-    navigate("/");  
+    navigate("/");
   };
 
   const handleChange = (e) => {

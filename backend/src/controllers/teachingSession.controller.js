@@ -8,7 +8,7 @@ const Evaluation = require("../models/evaluation.model");
 // Helper: Lấy học sinh active của lớp
 async function getActiveStudentsOfClass(classId) {
   const enrollments = await ClassEnrollment.find({ class_id: classId, status: "ACTIVE" })
-    .populate("student_user_id", "fullName email phone");
+    .populate("student_user_id", "full_name student_profile.student_full_name email phone");
   return enrollments.map((e) => e.student_user_id).filter(Boolean);
 }
 

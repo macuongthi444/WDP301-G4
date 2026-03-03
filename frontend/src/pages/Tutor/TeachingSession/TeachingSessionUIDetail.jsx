@@ -39,11 +39,8 @@ const formatDDMMYYYY = (d) => {
 };
 
 const pickStudentName = (st) =>
-  st?.fullName ||
-  st?.full_name ||
-  st?.name ||
-  st?.student_user_id?.fullName ||
-  st?.student_user_id?.full_name ||
+   st?.full_name ||
+  st?.student_profile?.student_full_name ||
   "Học sinh";
 
 const StarRating = ({ value = 0, onChange }) => {

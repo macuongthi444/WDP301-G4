@@ -2,12 +2,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Plus, X, Loader2, User } from "lucide-react";
 import api from "../../../services/api";
-
+import { useNavigate } from 'react-router-dom';
 const TutorStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+const navigate = useNavigate();
   // Search/filter UI only
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | ACTIVE | INACTIVE
@@ -92,16 +92,18 @@ const TutorStudents = () => {
       const res = await api.post("/students", payload);
 
       if (res.data.success) {
+        const backendData = res.data.data; // rõ ràng hơn
+
         const newStudentData = {
-          _id: res.data.data.studentId,
-          full_name: res.data.data.student_full_name,
-          email: res.data.data.email,
+          _id: backendData.studentId,
+          full_name: backendData.student_full_name || newStudent.student_full_name,
+          email: backendData.email || newStudent.email,
           dob: newStudent.dob,
           gender: newStudent.gender,
           school: newStudent.school,
           grade: newStudent.grade,
           class_name: newStudent.class_name,
-          status: "ACTIVE",
+          status: backendData.status || "PENDING", // lấy từ backend, fallback PENDING
         };
 
         setStudents((prev) => [...prev, newStudentData]);
@@ -118,9 +120,28 @@ const TutorStudents = () => {
 
   // ---------------- helpers UI ----------------
   const getName = (s) => s?.full_name || s?.student_full_name || s?.name || "Chưa cập nhật";
-  const getGrade = (s) => s?.grade || s?.level || s?.student_grade || "-";
-  const getClassName = (s) => s?.class_name || s?.class?.name || s?.className || "-";
 
+  const getGrade = (s) => {
+    return (
+      s?.student_profile?.grade ||
+      s?.grade ||
+      s?.level ||
+      s?.student_grade ||
+      "-"
+    );
+  };
+
+  const getClassName = (s) => {
+    return (
+      s?.student_profile?.class_name ||
+      s?.class_name ||
+      s?.class?.name ||
+      s?.className ||
+      "-"
+    );
+  };
+
+  const getSchool = (s) => s?.student_profile?.school || s?.school || "-"; // nếu cần dùng sau
   const dayLabel = (d) => {
     const map = { 1: "Thứ 2", 2: "Thứ 3", 3: "Thứ 4", 4: "Thứ 5", 5: "Thứ 6", 6: "Thứ 7", 0: "CN" };
     return map[d] || "-";
@@ -139,19 +160,46 @@ const TutorStudents = () => {
     return "-";
   };
 
-  const isActiveStudent = (s) => {
-    if (typeof s?.is_active === "boolean") return s.is_active;
-    const st = String(s?.status || "").toUpperCase();
-    if (!st) return true;
-    return st === "ACTIVE";
+  // Thay thế hàm isActiveStudent cũ
+  const getStudentStatus = (s) => {
+    const userStatus = String(s?.status || "").toUpperCase().trim();
+
+    if (!userStatus) return { label: "Không xác định", color: "bg-gray-100 text-gray-700" };
+
+    switch (userStatus) {
+      case "ACTIVE":
+        return { label: "Hoạt động", color: "bg-emerald-100 text-emerald-700" };
+      case "PENDING":
+        return { label: "Chờ xác thực", color: "bg-amber-100 text-amber-700" }; // màu vàng/cam
+      case "INACTIVE":
+      case "BANNED":
+        return { label: "Không hoạt động", color: "bg-slate-200 text-slate-700" };
+      default:
+        return { label: userStatus, color: "bg-gray-100 text-gray-700" }; // fallback
+    }
   };
 
   const stats = useMemo(() => {
     const total = students.length;
-    const active = students.filter(isActiveStudent).length;
-    const inactive = total - active;
-    const unfinished = 0;
-    return { total, active, inactive, unfinished };
+
+    let active = 0;
+    let pending = 0;
+    let inactive = 0;
+
+    students.forEach((s) => {
+      const st = String(s?.status || "").toUpperCase();
+      if (st === "ACTIVE") active++;
+      else if (st === "PENDING") pending++;
+      else inactive++;
+    });
+
+    return {
+      total,
+      active,
+      pending,          // thêm
+      inactive: inactive + (total - active - pending), // an toàn
+      unfinished: 0,
+    };
   }, [students]);
 
   const visibleStudents = useMemo(() => {
@@ -159,8 +207,10 @@ const TutorStudents = () => {
 
     return students
       .filter((s) => {
-        if (statusFilter === "ACTIVE") return isActiveStudent(s);
-        if (statusFilter === "INACTIVE") return !isActiveStudent(s);
+        if (statusFilter === "ALL") return true;
+        if (statusFilter === "ACTIVE") return String(s?.status || "").toUpperCase() === "ACTIVE";
+        if (statusFilter === "PENDING") return String(s?.status || "").toUpperCase() === "PENDING";
+        if (statusFilter === "INACTIVE") return !["ACTIVE", "PENDING"].includes(String(s?.status || "").toUpperCase());
         return true;
       })
       .filter((s) => {
@@ -197,14 +247,18 @@ const TutorStudents = () => {
       )}
 
       {/* Stats */}
-      <div className="mt-8 grid gap-6 md:grid-cols-4">
+      <div className="mt-8 grid gap-6 md:grid-cols-5">  {/* đổi thành 5 cột */}
         {[
           { label: "Tổng số", value: stats.total },
           { label: "Hoạt động", value: stats.active },
+          { label: "Chờ xác thực", value: stats.pending, bg: "bg-amber-50" }, // tùy chọn
           { label: "Không hoạt động", value: stats.inactive },
           { label: "Chưa hoàn thành bài tập", value: stats.unfinished },
         ].map((s) => (
-          <div key={s.label} className="rounded-2xl bg-slate-100 px-6 py-5 text-slate-700">
+          <div
+            key={s.label}
+            className={`rounded-2xl px-6 py-5 text-slate-700 ${s.bg || "bg-slate-100"}`}
+          >
             <div className="text-sm">{s.label}</div>
             <div className="mt-1 text-2xl font-extrabold text-slate-900">{s.value}</div>
           </div>
@@ -223,22 +277,24 @@ const TutorStudents = () => {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-fit rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500"
+          className="..."
         >
           <option value="ALL">Tất cả</option>
           <option value="ACTIVE">Hoạt động</option>
+          <option value="PENDING">Chờ xác thực</option>
           <option value="INACTIVE">Không hoạt động</option>
         </select>
       </div>
 
       {/* Table */}
-      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-12 gap-4 bg-slate-100 px-6 py-4 text-base font-extrabold text-slate-800">
-          {/* Hiển thị tên, khối và lớp. Bỏ cột ngày học */}
-          <div className="col-span-4">Tên</div>
-          <div className="col-span-2">Khối</div>
-          <div className="col-span-4">Lớp</div>
-          <div className="col-span-2">Trạng thái</div>
+      {/* Table */}
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid grid-cols-[3fr_1fr_2fr_2fr_1.5fr] gap-4 bg-slate-100 px-6 py-4 text-base font-extrabold text-slate-800 min-w-[900px]"> {/* min-w để buộc rộng hơn */}
+          <div>Tên học sinh</div>
+          <div className="text-center">Khối</div>
+          <div>Lớp</div>
+          <div>Trường</div>
+          <div className="text-center">Trạng thái</div>
         </div>
 
         {loading ? (
@@ -250,22 +306,33 @@ const TutorStudents = () => {
         ) : (
           <div className="divide-y divide-slate-100">
             {visibleStudents.map((s, idx) => {
-              const active = isActiveStudent(s);
+              const statusInfo = getStudentStatus(s);
               return (
                 <div
                   key={s?._id || s?.id || idx}
-                  className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-slate-50"
+                  className="grid grid-cols-[3fr_1fr_2fr_2fr_1.5fr] gap-4 px-6 py-4 hover:bg-slate-50 items-center min-w-[900px]"
                 >
-                  <div className="col-span-4 text-sm font-semibold text-slate-900">{getName(s)}</div>
-                  <div className="col-span-2 text-sm text-slate-700">{getGrade(s)}</div>
-                  <div className="col-span-4 text-sm text-slate-700">{getClassName(s)}</div>
-                  <div className="col-span-2">
+                  <div className="text-sm font-semibold text-slate-900 truncate">
+                    <button 
+                    onClick={() => navigate(`/tutor/students/${s._id}`)}
+                      className="hover:text-indigo-600 hover:underline">
+                      {getName(s)}
+                    </button>
+                  </div>
+                  <div className="text-sm text-slate-700 text-center">
+                    {getGrade(s)}
+                  </div>
+                  <div className="text-sm text-slate-700 truncate">
+                    {getClassName(s)}
+                  </div>
+                  <div className="text-sm text-slate-700 truncate">
+                    {getSchool(s)}
+                  </div>
+                  <div className="text-center">
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${
-                        active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
-                      }`}
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusInfo.color}`}
                     >
-                      {active ? "Hoạt động" : "Không hoạt động"}
+                      {statusInfo.label}
                     </span>
                   </div>
                 </div>
@@ -383,6 +450,7 @@ const TutorStudents = () => {
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
+
               </div>
 
               <div className="mt-6 flex justify-end gap-3">

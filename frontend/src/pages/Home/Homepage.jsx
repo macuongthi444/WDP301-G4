@@ -11,7 +11,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* HERO*/}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden ">
         {/* background */}
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-300 via-sky-400 to-indigo-600" />
 

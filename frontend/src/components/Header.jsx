@@ -58,7 +58,7 @@ const Header = () => {
 
   return (
     <div
-      className="bg-cover bg-center bg-no-repeat relative shadow-sm"
+      className=" sticky top-0 bg-cover bg-center bg-no-repeat relative shadow-sm z-50"
       style={{ backgroundImage: `url(${headerBg})`, minHeight: '100px' }}
     >
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm"></div>

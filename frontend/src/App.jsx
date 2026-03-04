@@ -34,7 +34,7 @@ function App() {
     <div className="min-h-screen bg-gray-50 font-sans antialiased flex flex-col">
       {!shouldHideHeader && <Header />}
 
-      <main className="flex-grow">
+      <main className="flex-grow pt-0">
         <Routes>
           {/* Public */}
           <Route path="/" element={<HomePage />} />

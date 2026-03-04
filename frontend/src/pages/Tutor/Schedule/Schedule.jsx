@@ -65,30 +65,27 @@ const TutorSchedule = () => {
   };
 
   const fetchSchedules = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  try {
+    setLoading(true);
+    const classesRes = await api.get("/class");
+    const myClasses = classesRes.data.data || [];
 
-      const classesRes = await api.get("/class");
-      const myClasses = classesRes.data.data || [];
+    const schedulePromises = myClasses.map(cls =>
+      api.get(`/class/${cls._id}/schedules`)
+        .then(res => res.data.data || [])
+        .catch(() => [])
+    );
 
-      const allSchedules = [];
-      for (const cls of myClasses) {
-        try {
-          const schedRes = await api.get(`/class/${cls._id}/schedules`);
-          allSchedules.push(...(schedRes.data.data || []));
-        } catch (err) {
-          console.warn(`Không lấy được lịch lớp ${cls._id}:`, err);
-        }
-      }
+    const allResults = await Promise.all(schedulePromises);
+    const allSchedules = allResults.flat();
 
-      setSchedules(allSchedules);
-    } catch (err) {
-      setError("Không thể tải lịch dạy");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setSchedules(allSchedules);
+  } catch (err) {
+    setError("Không thể tải lịch dạy");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ---------- helpers ----------
   const dateOnly = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());

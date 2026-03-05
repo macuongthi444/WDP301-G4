@@ -15,7 +15,7 @@ exports.createStudentByTutor = async (req, res) => {
     const tutor = req.user;
 
     // Kiểm tra quyền (đã fix ở bước trước, dùng cách linh hoạt)
-    const hasTutorRole = tutor.roles.some(role =>
+    const hasTutorRole = tutor.roles.some(role => 
       (typeof role === 'string' && role === 'TUTOR') ||
       (role && role.name === 'TUTOR')
     );
@@ -152,15 +152,12 @@ exports.getMyStudents = async (req, res) => {
 
     // Bây giờ dùng studentRole._id
     const students = await User.find({
-      roles: studentRole._id,
+      roles: studentRole._id,  // ← dùng studentRole._id thay vì studentRoleId
+      // Nếu bạn đã thêm field tutor_id trong student_profile thì thêm điều kiện này:
+      // 'student_profile.tutor_id': tutorId,
+      // Hiện tại tạm lấy tất cả học sinh để test (sau này lọc theo tutor)
     })
-      .select(
-        'full_name email phone dob gender status ' +
-        'student_profile.student_full_name ' +
-        'student_profile.school ' +
-        'student_profile.grade ' +
-        'student_profile.class_name'
-      )
+      .select('full_name email dob gender school phone student_profile.status')
       .lean();  // Tăng hiệu suất, không cần mongoose document
 
     res.status(200).json({
@@ -174,38 +171,6 @@ exports.getMyStudents = async (req, res) => {
       success: false,
       message: 'Lỗi server khi lấy danh sách học sinh',
       error: error.message,
-    });
-  }
-};
-
-
-// GET /api/students/:id
-exports.getStudentById = async (req, res) => {
-  try {
-    const studentId = req.params.studentId;
-    
-    const student = await User.findById(studentId)
-      .select('-password_hash -__v') // loại bỏ thông tin nhạy cảm
-      .populate('roles', 'name')     // nếu cần
-      .lean();
-    
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy học sinh",
-      });
-    }
-
-
-    res.status(200).json({
-      success: true,
-      data: student,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server",
     });
   }
 };

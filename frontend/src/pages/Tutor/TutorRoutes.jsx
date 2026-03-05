@@ -5,11 +5,14 @@ import { useAuth } from '../../context/AuthContext';
 
 import TutorDashboard from './Dashboard/Dashboard';
 import TutorStudents from './Student/Students';
-import StudentDetail from './Student/StudentDetail'
 import TutorClasses from './Class/Class';
 import TutorSchedule from './Schedule/Schedule';
 import TeachingSessionUIDetail from "./TeachingSession/TeachingSessionUIDetail"; //
 import ClassDetail from './Class/ClassDetail';
+import TextBook from '../textbook/TextBook';
+import TextBookDetail from '../textbook/TextBookDetail';
+import Assignment from '../Assignment/Assignment';
+import AssignmentDetail from '../Assignment/AssignmentDetail';
 // import các page khác...
 
 const TutorRoutes = () => {
@@ -28,12 +31,20 @@ const TutorRoutes = () => {
     <Routes>
       <Route path="dashboard" element={<TutorDashboard />} />           {/* /tutor */}
       <Route path="students" element={<TutorStudents />} />
-      <Route path="students/:studentId" element={<StudentDetail />} />
       <Route path="classes" element={<TutorClasses />} />
       <Route path="schedule" element={<TutorSchedule />} />
 
       <Route path="teaching/:classId" element={<TeachingSessionUIDetail />} />
       <Route path="classes/:classId" element={<ClassDetail />} />
+
+      {/* Syllabus Router */}
+      <Route path="/textbook" element={<TextBook />} />
+      <Route path="/textbooks/:id" element={<TextBookDetail />} />
+
+
+      {/* Assygnment Router */}
+      <Route path="/assignments" element={<Assignment />} />
+      <Route path="/assignments/:id" element={<AssignmentDetail />} />
 
       {/* ... */}
       <Route path="*" element={<Navigate to="/tutor" replace />} />

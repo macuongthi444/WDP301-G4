@@ -41,9 +41,15 @@ const Header = () => {
     role.toUpperCase() === 'ROLE_TUTOR'
   );
 
+  const isStudent = userRoles?.some(role =>
+    role.toUpperCase().includes('STUDENT') ||
+    role.toUpperCase() === 'ROLE_STUDENT'
+  );
+
+
   // Xử lý click icon User
   const handleUserClick = () => {
-    if (isLoggedIn && isTutor) {
+    if (isLoggedIn) {
       setIsUserDropdownOpen(!isUserDropdownOpen); // Mở dropdown nếu tutor
     } else {
       navigate('/login'); // Chuyển thẳng đến login nếu chưa đăng nhập
@@ -52,7 +58,7 @@ const Header = () => {
 
   return (
     <div
-      className="bg-cover bg-center bg-no-repeat relative shadow-sm"
+      className=" sticky top-0 bg-cover bg-center bg-no-repeat relative shadow-sm z-50"
       style={{ backgroundImage: `url(${headerBg})`, minHeight: '100px' }}
     >
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm"></div>
@@ -98,6 +104,19 @@ const Header = () => {
                   Trợ lý AI
                 </Link>
               </div>
+            ) : isLoggedIn && isStudent ? (
+              <>
+                <div className="hidden lg:flex items-center space-x-6 flex-1 justify-center text-sm">
+                  <Link to="/student" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
+                    <Calendar size={16} />
+                    Thông tin học tập
+                  </Link>
+                  <Link to="/student" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
+                    <BookOpen size={16} />
+                    Giáo Trình
+                  </Link>
+                </div>
+              </>
             ) : (
               <>
                 <Link to="/introduction" className="text-gray-800 hover:text-purple-600 font-medium">
@@ -137,13 +156,7 @@ const Header = () => {
             </button>
 
             {/* Cart */}
-            <button
-              onClick={() => navigate('/cart')}
-              className="text-gray-700 hover:text-purple-600 relative"
-              aria-label="Giỏ hàng"
-            >
-              <ShoppingCart size={26} />
-            </button>
+
 
             {/* User Icon */}
             <button
@@ -166,41 +179,91 @@ const Header = () => {
         </div>
 
         {/* Dropdown chỉ hiện khi tutor đã login */}
-        {isUserDropdownOpen && isLoggedIn && isTutor && (
+        {isUserDropdownOpen && isLoggedIn(
           <div ref={userDropdownRef} className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
             <div className="py-2">
-              <Link
-                to="/tutor/students"
-                className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                onClick={() => setIsUserDropdownOpen(false)}
-              >
-                <Users size={18} className="mr-3" />
-                Quản lý học sinh
-              </Link>
-              <Link
-                to="/tutor/classes"
-                className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                onClick={() => setIsUserDropdownOpen(false)}
-              >
-                <BookOpen size={18} className="mr-3" />
-                Quản lý lớp học
-              </Link>
-              <Link
-                to="/tutor/schedule"
-                className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                onClick={() => setIsUserDropdownOpen(false)}
-              >
-                <Calendar size={18} className="mr-3" />
-                Lịch dạy
-              </Link>
-              <Link
-                to="/tutor/profile"
-                className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                onClick={() => setIsUserDropdownOpen(false)}
-              >
-                <UserCircle size={18} className="mr-3" />
-                Hồ sơ cá nhân
-              </Link>
+              {isTutor &&
+                (
+                  <>
+                    <Link
+                      to="/tutor/students"
+                      className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                      onClick={() => setIsUserDropdownOpen(false)}
+                    >
+                      <Users size={18} className="mr-3" />
+                      Quản lý học sinh
+                    </Link>
+                    <Link
+                      to="/tutor/classes"
+                      className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                      onClick={() => setIsUserDropdownOpen(false)}
+                    >
+                      <BookOpen size={18} className="mr-3" />
+                      Quản lý lớp học
+                    </Link>
+                    <Link
+                      to="/tutor/schedule"
+                      className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                      onClick={() => setIsUserDropdownOpen(false)}
+                    >
+                      <Calendar size={18} className="mr-3" />
+                      Lịch dạy
+                    </Link>
+                    <Link
+                      to="/tutor/profile"
+                      className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                      onClick={() => setIsUserDropdownOpen(false)}
+                    >
+                      <UserCircle size={18} className="mr-3" />
+                      Hồ sơ cá nhân
+                    </Link>
+                  </>
+                )
+              }{isStudent && (
+                <>
+                  <Link
+                    to="/student/courses"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <Book size={18} className="mr-3" />
+                    Khóa học của tôi
+                  </Link>
+                  <Link
+                    to="/student/schedule"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <Calendar size={18} className="mr-3" />
+                    Lịch học
+                  </Link>
+                  <Link
+                    to="/student/progress"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <BarChart size={18} className="mr-3" />
+                    Tiến độ học tập
+                  </Link>
+                  <Link
+                    to="/student/materials"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <BookOpen size={18} className="mr-3" />
+                    Giáo trình & Tài liệu
+                  </Link>
+                  <Link
+                    to="/student/profile"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <UserCircle size={18} className="mr-3" />
+                    Hồ sơ cá nhân
+                  </Link>
+                </>
+              )}
+
               <hr className="my-1 border-gray-200" />
               <button
                 onClick={() => {

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -10,6 +11,19 @@ import {
 import api from "../../../services/api";
 
 const TutorSchedule = () => {
+  const navigate = useNavigate();
+
+  const toYMD = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const openSession = (schedule, date) => {
+    const classId = getScheduleClassId(schedule);
+    navigate(`/tutor/teaching/${classId}?date=${toYMD(date)}&scheduleId=${schedule._id}`);
+  };
   const [viewMode, setViewMode] = useState("week"); // day | week | month
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -53,20 +67,17 @@ const TutorSchedule = () => {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
-      setError(null);
-
       const classesRes = await api.get("/class");
       const myClasses = classesRes.data.data || [];
 
-      const allSchedules = [];
-      for (const cls of myClasses) {
-        try {
-          const schedRes = await api.get(`/class/${cls._id}/schedules`);
-          allSchedules.push(...(schedRes.data.data || []));
-        } catch (err) {
-          console.warn(`Không lấy được lịch lớp ${cls._id}:`, err);
-        }
-      }
+      const schedulePromises = myClasses.map(cls =>
+        api.get(`/class/${cls._id}/schedules`)
+          .then(res => res.data.data || [])
+          .catch(() => [])
+      );
+
+      const allResults = await Promise.all(schedulePromises);
+      const allSchedules = allResults.flat();
 
       setSchedules(allSchedules);
     } catch (err) {
@@ -266,9 +277,8 @@ const TutorSchedule = () => {
               return (
                 <div
                   key={day.toISOString()}
-                  className={`rounded-2xl p-4 min-h-[320px] cursor-pointer transition hover:brightness-[0.99] ${
-                    isToday ? "bg-sky-200/60" : "bg-slate-200"
-                  }`}
+                  className={`rounded-2xl p-4 min-h-[320px] cursor-pointer transition hover:brightness-[0.99] ${isToday ? "bg-sky-200/60" : "bg-slate-200"
+                    }`}
                   onClick={() => openDayDetail(day)}
                   role="button"
                 >
@@ -283,18 +293,22 @@ const TutorSchedule = () => {
                       {list.map((s) => {
                         const classId = getScheduleClassId(s);
                         return (
-                          <div key={s._id} className="rounded-xl bg-white p-3 shadow-md">
-                            {/* ✅ Hiển thị giờ bắt đầu - kết thúc */}
+                          <div
+                            key={s._id}
+                            className="rounded-xl bg-white p-3 shadow-md hover:bg-slate-50"
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation(); // tránh trigger click cả ô ngày
+                              openSession(s, day);
+                            }}
+                          >
                             <div className="text-sm font-extrabold text-slate-900">
                               {s.start_time || "--:--"} - {s.end_time || "--:--"}
                             </div>
-                            <div className="mt-1 text-sm text-slate-900">
-                              {getClassNameById(classId)}
-                            </div>
-                            <div className="text-xs text-slate-600 mt-0.5">
-                              {getStudentNamesByClassId(classId)}
-                            </div>
+                            <div className="mt-1 text-sm text-slate-900">{getClassNameById(classId)}</div>
+                            <div className="text-xs text-slate-600 mt-0.5">{getStudentNamesByClassId(classId)}</div>
                           </div>
+
                         );
                       })}
                     </div>
@@ -325,21 +339,20 @@ const TutorSchedule = () => {
               {list.map((s) => {
                 const classId = getScheduleClassId(s);
                 return (
-                  <div key={s._id} className="rounded-2xl bg-slate-50 px-6 py-5 shadow-sm">
-                    {/* ✅ Hiển thị đủ start - end */}
-                    <div className="text-base font-extrabold text-slate-900">
-                      {s.start_time || "--:--"} - {s.end_time || "--:--"} •{" "}
-                      {getClassNameById(classId)} • {getStudentNamesByClassId(classId)}
+                  <div
+                    key={s._id}
+                    className="rounded-xl bg-white p-3 shadow-md hover:bg-slate-50"
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openSession(s, currentDate); // ✅ đúng
+                    }}
+                  >
+                    <div className="text-sm font-extrabold text-slate-900">
+                      {s.start_time || "--:--"} - {s.end_time || "--:--"}
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {String(s?.mode).toUpperCase() === "OFFLINE"
-                        ? s?.location
-                          ? `Địa điểm: ${s.location}`
-                          : "Học trực tiếp"
-                        : s?.online_link
-                        ? `Link: ${s.online_link}`
-                        : "Học online"}
-                    </div>
+                    <div className="mt-1 text-sm text-slate-900">{getClassNameById(classId)}</div>
+                    <div className="text-xs text-slate-600 mt-0.5">{getStudentNamesByClassId(classId)}</div>
                   </div>
                 );
               })}
@@ -351,58 +364,90 @@ const TutorSchedule = () => {
   };
 
   const MonthView = () => {
-    const weekdays = ["Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy", "Chủ Nhật"];
-    const cells = getMonthGrid(currentDate);
-    const todayStr = new Date().toDateString();
-    const month = currentDate.getMonth();
-
-    return (
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
-        <div className="grid grid-cols-7 gap-2">
-          {weekdays.map((w) => (
-            <div key={w} className="py-2 text-center text-sm font-bold text-slate-700">
-              {w}
-            </div>
-          ))}
-
-          {cells.map((d, idx) => {
-            if (!d) return <div key={idx} className="h-[90px] rounded-xl bg-slate-50" />;
-
-            const inMonth = d.getMonth() === month;
-            const isToday = d.toDateString() === todayStr;
-
-            // ✅ count cũng phải lọc theo start/end
-            const count = getSchedulesForDate(d).length;
-
-            return (
-              <button
-                key={d.toISOString()}
-                onClick={() => openDayDetail(d)}
-                className={`h-[90px] rounded-xl border text-left p-3 transition ${
-                  isToday
-                    ? "border-sky-300 bg-sky-50"
-                    : "border-slate-200 bg-white hover:bg-slate-50"
-                } ${inMonth ? "" : "opacity-40"}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-bold text-slate-900">{d.getDate()}</div>
-                  {count > 0 ? (
-                    <span className="rounded-full bg-black px-2 py-0.5 text-[11px] font-semibold text-white">
-                      {count}
-                    </span>
-                  ) : null}
-                </div>
-                <div className="mt-2 text-xs text-slate-500">{count > 0 ? "Có buổi dạy" : "Trống"}</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
+  const weekdays = ["Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy", "Chủ Nhật"];
+  const cells = getMonthGrid(currentDate);
+  const todayStr = new Date().toDateString();
+  const month = currentDate.getMonth();
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
+    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
+      <div className="grid grid-cols-7 gap-2">
+        {weekdays.map((w) => (
+          <div key={w} className="py-2 text-center text-sm font-bold text-slate-700 bg-slate-50 rounded-t-lg">
+            {w}
+          </div>
+        ))}
+
+        {cells.map((d, idx) => {
+          if (!d) return <div key={idx} className="h-[90px] rounded-xl bg-slate-50" />;
+
+          const inMonth = d.getMonth() === month;
+          const isToday = d.toDateString() === todayStr;
+          const count = getSchedulesForDate(d).length;
+
+          // Màu badge theo số buổi
+          let badgeClass = "bg-gray-500 text-white";
+          if (count === 1) badgeClass = "bg-emerald-500 text-white";
+          else if (count >= 2 && count <= 3) badgeClass = "bg-amber-500 text-white";
+          else if (count > 3) badgeClass = "bg-red-500 text-white animate-pulse";
+
+          // Nền và viền ô
+          let cellClass = "border-slate-200 bg-white hover:bg-slate-50";
+          if (isToday) {
+            cellClass = "border-2 border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-200";
+          } else if (count > 0 && inMonth) {
+            cellClass = "border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/70";
+          }
+
+          return (
+            <button
+              key={d.toISOString()}
+              onClick={() => openDayDetail(d)}
+              className={`h-[90px] rounded-xl border p-3 text-left transition-all duration-200 
+                hover:shadow-md hover:scale-[1.02] ${cellClass} ${!inMonth ? "opacity-40" : ""}`}
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className={`text-base font-bold ${isToday ? "text-indigo-700" : "text-slate-900"}`}
+                >
+                  {d.getDate()}
+                </div>
+
+                {count > 0 && (
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm ${badgeClass}`}>
+                    {count}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-1.5 text-xs">
+                {isToday && (
+                  <div className="font-semibold text-indigo-600 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span>
+                    Hôm nay
+                  </div>
+                )}
+
+                {!isToday && count > 0 && (
+                  <span className="text-emerald-700 font-medium">
+                    {count} buổi dạy
+                  </span>
+                )}
+
+                {!isToday && count === 0 && inMonth && (
+                  <span className="text-slate-500">Trống</span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+  return (
+    <div className="mx-auto max-w-7xl px-6 py-10">
       {/* Header */}
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-3">
@@ -454,9 +499,8 @@ const TutorSchedule = () => {
               <button
                 key={it.key}
                 onClick={() => setViewMode(it.key)}
-                className={`min-w-[84px] rounded-full px-5 py-2 text-sm font-semibold transition ${
-                  viewMode === it.key ? "bg-black text-white shadow" : "text-slate-700 hover:bg-white/70"
-                }`}
+                className={`min-w-[84px] rounded-full px-5 py-2 text-sm font-semibold transition ${viewMode === it.key ? "bg-black text-white shadow" : "text-slate-700 hover:bg-white/70"
+                  }`}
               >
                 {it.label}
               </button>
@@ -666,14 +710,14 @@ const TutorSchedule = () => {
                 selectedDaySchedules.map((s) => {
                   const classId = getScheduleClassId(s);
                   return (
-                    <div key={s._id} className="rounded-xl bg-slate-50 p-4">
-                      {/* ✅ Hiển thị start - end */}
-                      <div className="font-extrabold text-slate-900">
-                        {s.start_time || "--:--"} - {s.end_time || "--:--"}
-                      </div>
-                      <div className="text-sm text-slate-700">
-                        Lớp: {getClassNameById(classId)}
-                      </div>
+                    <div
+                      key={s._id}
+                      className="rounded-xl bg-slate-50 p-4 hover:bg-slate-100 cursor-pointer"
+                      onClick={() => {
+                        openSession(s, selectedDate);
+                        setSelectedDate(null);
+                      }}
+                    >
                       <div className="text-xs text-slate-500 mt-1">
                         {String(s?.mode).toUpperCase() === "OFFLINE"
                           ? `Địa điểm: ${s.location || "Chưa cập nhật"}`

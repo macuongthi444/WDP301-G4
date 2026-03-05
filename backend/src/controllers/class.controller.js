@@ -2,6 +2,7 @@
 const Class = require('../models/class.model');
 const ClassEnrollment = require('../models/classEnrollment.model');
 const User = require('../models/user.model');
+const WeeklySchedule = require('../models/weeklySchedule.model'); // ✅ THÊM DÒNG NÀY
 const mongoose = require('mongoose');
 
 // 1. Tạo lớp học mới
@@ -63,29 +64,42 @@ exports.getMyClasses = async (req, res) => {
   }
 };
 
-// 3. Lấy chi tiết lớp (bao gồm danh sách học sinh)
+// 3. Lấy chi tiết lớp (bao gồm danh sách học sinh + lịch dạy)
 exports.getClassDetail = async (req, res) => {
   try {
     const tutorId = req.user._id;
     const classId = req.params.id;
 
-    const classDetail = await Class.findOne({ _id: classId, tutor_user_id: tutorId });
+    const classDetail = await Class.findOne({ _id: classId, tutor_user_id: tutorId }).lean();
 
     if (!classDetail) {
       return res.status(404).json({ message: 'Không tìm thấy lớp học hoặc bạn không có quyền' });
     }
 
-    // Lấy danh sách học sinh đang ACTIVE
+    // ✅ Lấy danh sách học sinh ACTIVE
+    // IMPORTANT: user schema của bạn là full_name (không phải fullName)
+    // + có student_profile.student_full_name
     const enrollments = await ClassEnrollment.find({
       class_id: classId,
       status: 'ACTIVE',
-    }).populate('student_user_id', 'full_name email phone');
+    })
+      .populate('student_user_id', 'full_name email phone student_profile.student_full_name')
+      .lean();
 
-    res.status(200).json({
+    // ✅ Lấy lịch dạy của lớp (WeeklySchedule)
+    const schedules = await WeeklySchedule.find({
+      class_id: classId,
+      is_active: { $ne: false },
+    })
+      .sort({ day_of_week: 1, start_time: 1 })
+      .lean();
+
+    return res.status(200).json({
       message: 'Lấy chi tiết lớp học thành công',
       data: {
         class: classDetail,
-        enrolled_students: enrollments,
+        enrolled_students: enrollments, // mỗi phần tử: { student_user_id: {...}, ... }
+        schedules,                      // ✅ thêm
       },
     });
   } catch (error) {

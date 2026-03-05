@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-this'; // Đặt trong .env
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'; // 7 ngày
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h'; // 7 ngày
 
 // Hash password
 exports.hashPassword = async (password) => {

@@ -34,7 +34,12 @@ const sendOTPEmail = async (email, otp, type) => {
 
 exports.register = async (req, res) => {
   try {
-    const { email, password, full_name, phone, roleNames = ['STUDENT'] } = req.body;
+    let { email, password, full_name, phone } = req.body;
+
+    // ÉP CỨNG role cho đăng ký thường
+    const roleNames = ['TUTOR'];
+
+    email = String(email || "").trim().toLowerCase();
 
     if (!email || !password || !full_name) {
       return res.status(400).json({ message: 'Thiếu email, password hoặc full_name' });
@@ -64,7 +69,9 @@ exports.register = async (req, res) => {
     });
 
     // Tạo OTP verify email
-    const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
+    const otp = String(
+      otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false })
+    );
     const expiresDate = new Date();
     expiresDate.setMinutes(expiresDate.getMinutes() + 10);
 
@@ -87,14 +94,17 @@ exports.register = async (req, res) => {
 // VERIFY EMAIL OTP
 exports.verifyEmail = async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    let { email, otp } = req.body;
+
+    email = String(email || "").trim().toLowerCase();
+    otp = String(otp || "").trim();
 
     if (!email || !otp) {
-      return res.status(400).json({ message: 'Thiếu email hoặc OTP' });
+      return res.status(400).json({ message: "Thiếu email hoặc OTP" });
     }
 
     const user = await User.findOne({ email })
-      .select('+emailVerificationOTP +emailVerificationOTPExpires');
+      .select("+emailVerificationOTP +emailVerificationOTPExpires");
 
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
@@ -104,8 +114,9 @@ exports.verifyEmail = async (req, res) => {
       return res.status(400).json({ message: 'Email đã được xác thực rồi' });
     }
 
-    if (!user.emailVerificationOTP || user.emailVerificationOTP !== otp) {
-      return res.status(400).json({ message: 'Mã OTP không đúng' });
+    const savedOtp = String(user.emailVerificationOTP || "").trim();
+    if (!savedOtp || savedOtp !== otp) {
+      return res.status(400).json({ message: "Mã OTP không đúng" });
     }
 
     if (user.emailVerificationOTPExpires < new Date()) {
@@ -129,7 +140,8 @@ exports.verifyEmail = async (req, res) => {
 // LOGIN - Chỉ cho phép nếu status === 'ACTIVE'
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    email = String(email || "").trim().toLowerCase();
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Thiếu email hoặc password' });
@@ -172,10 +184,11 @@ exports.login = async (req, res) => {
 // FORGOT PASSWORD - Gửi OTP reset
 exports.forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    let { email } = req.body;
 
+    email = String(email || "").trim().toLowerCase();
     if (!email) {
-      return res.status(400).json({ message: 'Thiếu email' });
+      return res.status(400).json({ message: "Thiếu email" });
     }
 
     const user = await User.findOne({ email });
@@ -183,7 +196,9 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'Email không tồn tại' });
     }
 
-    const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
+    const otp = String(
+      otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false })
+    );
 
     const expiresDate = new Date();
     expiresDate.setMinutes(expiresDate.getMinutes() + 10);
@@ -203,31 +218,37 @@ exports.forgotPassword = async (req, res) => {
 // RESET PASSWORD với OTP
 exports.resetPassword = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    let { email, otp, newPassword } = req.body;
+
+    email = String(email || "").trim().toLowerCase();
+    otp = String(otp || "").trim();
 
     if (!email || !otp || !newPassword) {
-      return res.status(400).json({ message: 'Thiếu thông tin cần thiết' });
+      return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email })
+      .select("+resetPasswordOTP +resetPasswordOTPExpires");
+
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
     }
 
-    if (!user.resetPasswordOTP || user.resetPasswordOTP !== otp) {
-      return res.status(400).json({ message: 'Mã OTP không đúng' });
+    const savedOtp = String(user.resetPasswordOTP || "").trim();
+    if (!savedOtp || savedOtp !== otp) {
+      return res.status(400).json({ message: "Mã OTP không đúng" });
     }
-
     if (user.resetPasswordOTPExpires < new Date()) {
       return res.status(400).json({ message: 'Mã OTP đã hết hạn' });
     }
 
+    // Đặt lại mật khẩu
     user.password_hash = await hashPassword(newPassword);
     user.resetPasswordOTP = undefined;
     user.resetPasswordOTPExpires = undefined;
     await user.save();
 
-    res.status(200).json({ message: 'Đặt lại mật khẩu thành công. Hãy đăng nhập lại.' });
+    return res.status(200).json({ message: 'Đặt lại mật khẩu thành công. Hãy đăng nhập lại.' });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }

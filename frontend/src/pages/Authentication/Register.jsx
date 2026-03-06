@@ -153,7 +153,9 @@ const RegisterPage = () => {
       await api.post("/auth/register", payload);
 
       toastSuccess("Đăng ký thành công! Vui lòng kiểm tra email để xác thực.");
-      navigate("/verify-email");
+
+      // ✅ CHỈNH Ở ĐÂY: truyền sẵn email sang verify-email để đồng bộ UX
+      navigate("/verify-email", { state: { email: formData.email.trim() } });
     } catch (error) {
       const errorMsg =
         error.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.";
@@ -395,7 +397,7 @@ const RegisterPage = () => {
                       {loading ? (
                         <span className="inline-flex items-center gap-2">
                           <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                          Đang tạo tài khoản...
+                          Đang gửi mã OTP...
                         </span>
                       ) : (
                         "Đăng ký"

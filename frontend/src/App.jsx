@@ -11,10 +11,11 @@ import HomePage from './pages/Home/Homepage';
 import LoginPage from './pages/Authentication/Login';
 import RegisterPage from './pages/Authentication/Register';
 //  import VerifyEmailPage from './pages/Authentication/VerifyEmail'
-// import ForgotPasswordPage from ...
-// import ResetPasswordPage from ...
 
 import TutorLayout from './pages/Tutor/TutorLayout';
+import ForgotPasswordPage from './pages/Authentication/ForgotPassword';
+import ResetPasswordPage from './pages/Authentication/ResetPassword';
+import VerifyEmailPage from './pages/Authentication/VerifyEmail';
 
 function App() {
   const location = useLocation();
@@ -34,7 +35,7 @@ function App() {
     <div className="min-h-screen bg-gray-50 font-sans antialiased flex flex-col">
       {!shouldHideHeader && <Header />}
 
-      <main className="flex-grow">
+      <main className="flex-grow pt-0">
         <Routes>
           {/* Public */}
           <Route path="/" element={<HomePage />} />
@@ -42,9 +43,9 @@ function App() {
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          {/* <Route path="/verify-email" element={<VerifyEmailPage />} /> */}
-          {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
-          {/* <Route path="/reset-password" element={<ResetPasswordPage />} /> */}
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Protected routes theo role */}
           <Route element={<ProtectedRoute allowedRoles={['TUTOR']} />}>

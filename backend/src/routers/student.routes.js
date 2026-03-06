@@ -26,5 +26,11 @@ router.get(
   authorize('TUTOR'),
   studentController.getStudentById
 );
+router.patch(
+  '/:studentId',   // ← Đổi từ '/students' thành '/' → GET /api/students
+  protect,
+  authorize('TUTOR'),
+  studentController.updateStudent
+);
 
 module.exports = router;

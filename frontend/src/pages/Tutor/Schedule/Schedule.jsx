@@ -1,3 +1,4 @@
+//src.pages/Tutor/Schedule/Schedule.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,7 +20,30 @@ const TutorSchedule = () => {
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
   };
-
+  // thêm
+  const GRADE_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
+  //thêm
+  const SUBJECT_OPTIONS = [
+    "Toán",
+    "Tiếng Việt",
+    "Ngữ văn",
+    "Tiếng Anh",
+    "Khoa học",
+    "Khoa học tự nhiên",
+    "Vật lý",
+    "Hóa học",
+    "Sinh học",
+    "Lịch sử",
+    "Địa lý",
+    "Lịch sử & Địa lý",
+    "GDCD",
+    "Giáo dục kinh tế & pháp luật",
+    "Tin học",
+    "Công nghệ",
+    "Mỹ thuật",
+    "Giáo dục thể chất",
+    "Hoạt động trải nghiệm / Hướng nghiệp",
+  ];
   const openSession = (schedule, date) => {
     const classId = getScheduleClassId(schedule);
     navigate(`/tutor/teaching/${classId}?date=${toYMD(date)}&scheduleId=${schedule._id}`);
@@ -37,12 +61,18 @@ const TutorSchedule = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newSchedule, setNewSchedule] = useState({
     classId: "",
-    day_of_week: 1,
-    start_time: "18:00",
-    end_time: "20:00",
-    mode: "OFFLINE",
+    grade: "--ChọnLớp--",             // ✅ thêm
+    subject: "--ChọnMôn--",      // ✅ thêm
+    mode: "OFFLINE",      // OFFLINE = Trực tiếp, ONLINE = Trực tuyến
     location: "",
     online_link: "",
+    repeat_type: "WEEKLY", // WEEKLY | ONCE
+    day_of_week: 1,
+    start_time: "--:--",
+    end_time: "--:--",
+    location: "",
+    online_link: "",
+    note: "",
     is_active: true,
   });
 
@@ -86,7 +116,15 @@ const TutorSchedule = () => {
       setLoading(false);
     }
   };
-
+  const DOWS = [
+    { value: 1, label: "Thứ hai" },
+    { value: 2, label: "Thứ ba" },
+    { value: 3, label: "Thứ tư" },
+    { value: 4, label: "Thứ năm" },
+    { value: 5, label: "Thứ sáu" },
+    { value: 6, label: "Thứ bảy" },
+    { value: 0, label: "Chủ nhật" },
+  ];
   // ---------- helpers ----------
   const dateOnly = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
@@ -236,29 +274,66 @@ const TutorSchedule = () => {
 
   // ---------- create schedule (backend giữ nguyên) ----------
   const handleCreateSchedule = async (e) => {
-    e.preventDefault();
-    if (!newSchedule.classId) return alert("Vui lòng chọn lớp");
+  e.preventDefault();
+  if (!newSchedule.classId) return alert("Vui lòng chọn lớp");
+  if (!newSchedule.start_date) return alert("Vui lòng chọn ngày bắt đầu");
+  if (newSchedule.repeat_type === "WEEKLY" && !newSchedule.end_date) {
+    return alert("Vui lòng chọn ngày kết thúc (Hằng tuần)");
+  }
 
-    try {
-      await api.post(`/class/${newSchedule.classId}/schedules`, newSchedule);
-      alert("Tạo lịch thành công!");
-      setIsCreateModalOpen(false);
-      setNewSchedule({
-        classId: "",
-        day_of_week: 1,
-        start_time: "18:00",
-        end_time: "20:00",
-        mode: "OFFLINE",
-        location: "",
-        online_link: "",
-        is_active: true,
-      });
-      fetchSchedules();
-    } catch (err) {
-      alert(err.response?.data?.message || "Tạo lịch thất bại");
-    }
+  const cls = classes.find((c) => c._id === newSchedule.classId);
+  const classLevel = Number(cls?.level);
+  const gradeToSend = Number.isFinite(classLevel) ? classLevel : Number(newSchedule.grade || 1);
+
+  const payload = {
+    grade: gradeToSend,
+    subject: newSchedule.subject,
+
+    repeat_type: newSchedule.repeat_type,
+    day_of_week: Number(newSchedule.day_of_week),
+
+    start_date: newSchedule.start_date,
+    end_date: newSchedule.repeat_type === "ONCE" ? newSchedule.start_date : newSchedule.end_date,
+
+    start_time: newSchedule.start_time,
+    end_time: newSchedule.end_time,
+
+    mode: newSchedule.mode,
+    location: newSchedule.mode === "OFFLINE" ? newSchedule.location : "",
+    online_link: newSchedule.mode === "ONLINE" ? newSchedule.online_link : "",
+
+    note: newSchedule.note,
+    is_active: !!newSchedule.is_active,
   };
 
+  try {
+    await api.post(`/class/${newSchedule.classId}/schedules`, payload);
+
+    alert("Tạo lịch thành công!");
+    setIsCreateModalOpen(false);
+
+    setNewSchedule({
+      classId: "",
+      grade: "--ChọnLớp--",
+      subject: "--ChọnMôn--",
+      mode: "OFFLINE",
+      location: "",
+      online_link: "",
+      repeat_type: "WEEKLY",
+      day_of_week: 1,
+      start_date: "",
+      end_date: "",
+      start_time: "--:--",
+      end_time: "--:--",
+      note: "",
+      is_active: true,
+    });
+
+    fetchSchedules();
+  } catch (err) {
+    alert(err.response?.data?.message || "Tạo lịch thất bại");
+  }
+};
   // ---------- views ----------
   const WeekView = () => {
     const todayStr = new Date().toDateString();
@@ -537,154 +612,216 @@ const TutorSchedule = () => {
 
       {/* Create Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
-            <button
-              onClick={() => setIsCreateModalOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-            >
-              <X size={22} />
-            </button>
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl border border-slate-200">
+      <button
+        onClick={() => setIsCreateModalOpen(false)}
+        className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+      >
+        <X size={20} />
+      </button>
 
-            <h2 className="text-xl font-extrabold text-slate-900">Tạo lịch dạy mới</h2>
-            <p className="mt-1 text-sm text-slate-500">Điền thông tin để tạo lịch cho lớp</p>
+      <div className="px-6 pt-6 pb-3">
+        <h2 className="text-2xl font-extrabold text-center text-slate-900">Tạo lịch dạy</h2>
+      </div>
 
-            <form onSubmit={handleCreateSchedule} className="mt-5 space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                  Chọn lớp <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={newSchedule.classId}
-                  onChange={(e) => setNewSchedule({ ...newSchedule, classId: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  required
-                >
-                  <option value="">-- Chọn lớp --</option>
-                  {classes.map((cls) => (
-                    <option key={cls._id} value={cls._id}>
-                      {cls.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      <form onSubmit={handleCreateSchedule} className="px-6 pb-6 space-y-4">
+        {/* Lớp (class) */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">Lớp:</label>
+          <select
+            value={newSchedule.classId}
+            onChange={(e) => setNewSchedule({ ...newSchedule, classId: e.target.value })}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+          >
+            <option value="">-- Chọn lớp --</option>
+            {classes.map((cls) => (
+              <option key={cls._id} value={cls._id}>{cls.name}</option>
+            ))}
+          </select>
+        </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Thứ</label>
-                  <select
-                    value={newSchedule.day_of_week}
-                    onChange={(e) =>
-                      setNewSchedule({ ...newSchedule, day_of_week: Number(e.target.value) })
-                    }
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value={1}>Thứ hai</option>
-                    <option value={2}>Thứ ba</option>
-                    <option value={3}>Thứ tư</option>
-                    <option value={4}>Thứ năm</option>
-                    <option value={5}>Thứ sáu</option>
-                    <option value={6}>Thứ bảy</option>
-                    <option value={0}>Chủ Nhật</option>
-                  </select>
-                </div>
+        {/* Môn học */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">Môn học:</label>
+          <select
+            value={newSchedule.subject}
+            onChange={(e) => setNewSchedule({ ...newSchedule, subject: e.target.value })}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {SUBJECT_OPTIONS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Bắt đầu</label>
-                  <input
-                    type="time"
-                    value={newSchedule.start_time}
-                    onChange={(e) => setNewSchedule({ ...newSchedule, start_time: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
+        {/* Hình thức dạy */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Hình thức dạy:</label>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Kết thúc</label>
-                  <input
-                    type="time"
-                    value={newSchedule.end_time}
-                    onChange={(e) => setNewSchedule({ ...newSchedule, end_time: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
+          <div className="flex items-center gap-6 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="mode"
+                checked={newSchedule.mode === "ONLINE"}
+                onChange={() => setNewSchedule({ ...newSchedule, mode: "ONLINE" })}
+              />
+              Trực tuyến
+            </label>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Hình thức</label>
-                  <select
-                    value={newSchedule.mode}
-                    onChange={(e) => setNewSchedule({ ...newSchedule, mode: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="OFFLINE">OFFLINE</option>
-                    <option value="ONLINE">ONLINE</option>
-                  </select>
-                </div>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="mode"
+                checked={newSchedule.mode === "OFFLINE"}
+                onChange={() => setNewSchedule({ ...newSchedule, mode: "OFFLINE" })}
+              />
+              Trực tiếp
+            </label>
+          </div>
 
-                <div className="flex items-center gap-3 pt-7">
-                  <input
-                    id="is_active"
-                    type="checkbox"
-                    checked={!!newSchedule.is_active}
-                    onChange={(e) =>
-                      setNewSchedule({ ...newSchedule, is_active: e.target.checked })
-                    }
-                    className="h-4 w-4 rounded border-slate-300"
-                  />
-                  <label htmlFor="is_active" className="text-sm font-semibold text-slate-700">
-                    Đang hoạt động
-                  </label>
-                </div>
-              </div>
+          <input
+            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder={newSchedule.mode === "ONLINE" ? "Link online" : "Địa chỉ"}
+            value={newSchedule.mode === "ONLINE" ? newSchedule.online_link : newSchedule.location}
+            onChange={(e) => {
+              const v = e.target.value;
+              setNewSchedule((prev) => ({
+                ...prev,
+                online_link: prev.mode === "ONLINE" ? v : prev.online_link,
+                location: prev.mode === "OFFLINE" ? v : prev.location,
+              }));
+            }}
+          />
+        </div>
 
-              {String(newSchedule.mode).toUpperCase() === "OFFLINE" ? (
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Địa điểm</label>
-                  <input
-                    type="text"
-                    value={newSchedule.location}
-                    onChange={(e) => setNewSchedule({ ...newSchedule, location: e.target.value })}
-                    placeholder="VD: Nhà học sinh / Trung tâm..."
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Online link</label>
-                  <input
-                    type="text"
-                    value={newSchedule.online_link}
-                    onChange={(e) =>
-                      setNewSchedule({ ...newSchedule, online_link: e.target.value })
-                    }
-                    placeholder="VD: Zoom/Google Meet link..."
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              )}
+        {/* Lịch dạy */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Lịch dạy:</label>
 
-              <div className="mt-6 flex justify-end gap-3">
+          <div className="flex items-center gap-6 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="repeat"
+                checked={newSchedule.repeat_type === "ONCE"}
+                onChange={() =>
+                  setNewSchedule((prev) => ({
+                    ...prev,
+                    repeat_type: "ONCE",
+                    end_date: prev.start_date,
+                  }))
+                }
+              />
+              Đơn buổi
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="repeat"
+                checked={newSchedule.repeat_type === "WEEKLY"}
+                onChange={() => setNewSchedule({ ...newSchedule, repeat_type: "WEEKLY" })}
+              />
+              Hằng tuần
+            </label>
+          </div>
+
+          {/* Chọn thứ bằng nút */}
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {DOWS.map((d) => {
+              const active = Number(newSchedule.day_of_week) === Number(d.value);
+              return (
                 <button
                   type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  key={d.value}
+                  onClick={() => setNewSchedule({ ...newSchedule, day_of_week: d.value })}
+                  className={`rounded-lg border px-2 py-2 text-xs font-semibold ${
+                    active
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                  }`}
                 >
-                  Hủy
+                  {d.label}
                 </button>
-                <button
-                  type="submit"
-                  className="rounded-xl bg-gradient-to-r from-emerald-300 to-indigo-400 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:brightness-95"
-                >
-                  Tạo lịch
-                </button>
-              </div>
-            </form>
+              );
+            })}
+          </div>
+
+          {/* Chọn ngày */}
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <input
+              type="date"
+              value={newSchedule.start_date}
+              onChange={(e) =>
+                setNewSchedule((prev) => ({
+                  ...prev,
+                  start_date: e.target.value,
+                  end_date: prev.repeat_type === "ONCE" ? e.target.value : prev.end_date,
+                }))
+              }
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+            <input
+              type="date"
+              disabled={newSchedule.repeat_type === "ONCE"}
+              value={newSchedule.repeat_type === "ONCE" ? newSchedule.start_date : newSchedule.end_date}
+              onChange={(e) => setNewSchedule({ ...newSchedule, end_date: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-100"
+            />
+          </div>
+
+          {/* Chọn giờ */}
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <input
+              type="time"
+              value={newSchedule.start_time}
+              onChange={(e) => setNewSchedule({ ...newSchedule, start_time: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <input
+              type="time"
+              value={newSchedule.end_time}
+              onChange={(e) => setNewSchedule({ ...newSchedule, end_time: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
         </div>
-      )}
 
+        {/* Ghi chú */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Ghi chú</label>
+          <textarea
+            rows={4}
+            value={newSchedule.note}
+            onChange={(e) => setNewSchedule({ ...newSchedule, note: e.target.value })}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(false)}
+            className="rounded-xl bg-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300"
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            className="rounded-xl bg-gradient-to-r from-emerald-300 to-indigo-400 px-6 py-2 text-sm font-semibold text-white hover:brightness-95"
+          >
+            Tạo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
       {/* Day detail modal */}
       {selectedDate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

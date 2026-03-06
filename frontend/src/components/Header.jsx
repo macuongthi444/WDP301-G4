@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Menu, Search, User, ShoppingCart, LogOut, Users, Calendar, BookOpen, UserCircle } from 'lucide-react';
+import { Menu, Search, User, ShoppingCart, LogOut, Users, Calendar, BookOpen, UserCircle, BellDot } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import logo from '../assets/logo.png';
@@ -12,9 +12,12 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false); // cho dropdown thông báo
 
   const userDropdownRef = useRef(null);
-
+  const notificationRef = useRef(null);
+  const hasNotification = true; // → false khi không có thông báo mới
+  const notificationCount = 3;
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -55,7 +58,45 @@ const Header = () => {
       navigate('/login'); // Chuyển thẳng đến login nếu chưa đăng nhập
     }
   };
+  const handleNotificationClick = () => {
+    setIsNotificationOpen(!isNotificationOpen);
+    // Có thể gọi API mark as read ở đây sau này
+  };
+  // Hàm tạo màu từ chuỗi (dựa trên hash đơn giản)
+  const stringToColor = (str) => {
+    if (!str) return '#6b7280'; // fallback xám
 
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    let color = '#';
+    for (let i = 0; i < 3; i++) {
+      const value = (hash >> (i * 8)) & 0xff;
+      color += ('00' + value.toString(16)).slice(-2);
+    }
+    return color;
+  };
+
+  // Lấy chữ cái đầu (hỗ trợ tên tiếng Việt có dấu)
+  const getInitials = (name) => {
+    if (!name) return '?';
+    const trimmed = name.trim();
+    if (!trimmed) return '?';
+
+    // Tách từ, lấy chữ cái đầu mỗi từ (tối đa 2 ký tự)
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    let initials = '';
+
+    if (words.length >= 2) {
+      initials = (words[0][0] || '') + (words[words.length - 1][0] || '');
+    } else {
+      initials = trimmed.slice(0, 2);
+    }
+
+    return initials.toUpperCase();
+  };
   return (
     <div
       className=" sticky top-0 bg-cover bg-center bg-no-repeat relative shadow-sm z-50"
@@ -122,58 +163,103 @@ const Header = () => {
                 <Link to="/introduction" className="text-gray-800 hover:text-purple-600 font-medium">
                   Giới Thiệu
                 </Link>
-                <Link to="/products" className="text-gray-800 hover:text-purple-600 font-medium">
-                  Sản phẩm
+                <Link to="/" className="text-gray-800 hover:text-purple-600 font-medium">
+                  Liên Hệ
                 </Link>
               </>
             )}
           </div>
 
-          {/* Search Bar (desktop) */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Tìm kiếm sản phẩm..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-5 py-3 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-purple-600"
-              >
-                <Search size={22} />
-              </button>
-            </div>
-          </form>
+
 
           {/* Icons */}
           <div className="flex items-center space-x-6">
-            {/* Search mobile */}
-            <button className="md:hidden text-gray-700 hover:text-purple-600">
-              <Search size={24} />
-            </button>
+            {/* Icon Thông báo */}
 
-            {/* Cart */}
+            {isLoggedIn && (
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={handleNotificationClick}
+                  className="text-gray-700 hover:text-purple-600 relative"
+                  aria-label="Thông báo"
+                >
+                  <BellDot size={24} />
+                  {hasNotification && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Dropdown thông báo */}
+                {isNotificationOpen && (
+                  <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+                    <div className="p-4 border-b bg-gray-50">
+                      <h3 className="font-semibold text-gray-800">Thông báo</h3>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {/* Ví dụ vài thông báo giả lập */}
+                      <div className="p-4 border-b hover:bg-gray-50 cursor-pointer">
+                        <p className="text-sm font-medium">Học sinh mới đăng ký lớp Toán 10</p>
+                        <p className="text-xs text-gray-500 mt-1">15 phút trước</p>
+                      </div>
+                      <div className="p-4 border-b hover:bg-gray-50 cursor-pointer">
+                        <p className="text-sm font-medium">Buổi học hôm nay lúc 19:00 đã xác nhận</p>
+                        <p className="text-xs text-gray-500 mt-1">2 giờ trước</p>
+                      </div>
+                      <div className="p-4 text-center text-gray-500 text-sm">
+                        Bạn đã xem hết thông báo
+                      </div>
+                    </div>
+                    <div className="p-3 border-t text-center">
+                      <Link
+                        to="/notifications"
+                        className="text-purple-600 hover:underline text-sm"
+                        onClick={() => setIsNotificationOpen(false)}
+                      >
+                        Xem tất cả thông báo
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
 
+            {/* User Icon */}
             {/* User Icon */}
             <button
               onClick={handleUserClick}
               className="text-gray-700 hover:text-purple-600 flex items-center gap-2"
               aria-label="Tài khoản"
             >
-              {isLoggedIn && user?.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt="Avatar"
-                  className="h-8 w-8 rounded-full object-cover border border-purple-300"
-                />
+              {isLoggedIn ? (
+                user?.avatar ? (
+                  // Có avatar thật → hiển thị ảnh
+                  <img
+                    src={user.avatar}
+                    alt="Avatar"
+                    className="h-9 w-9 rounded-full object-cover border-2 border-purple-200 shadow-sm"
+                  />
+                ) : (
+                  // Không có avatar → hiển thị initial với màu random
+                  <div
+                    className="h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold text-base shadow-sm border-2 border-purple-200"
+                    style={{ backgroundColor: stringToColor(user?.full_name || user?.email || 'User') }}
+                  >
+                    {getInitials(user?.full_name || user?.email || 'U')}
+                  </div>
+                )
               ) : (
+                // Chưa đăng nhập → icon mặc định
                 <User size={26} />
               )}
-              {isLoggedIn && <span className="text-sm hidden sm:inline">{user?.full_name || 'Tài khoản'}</span>}
+
+              {isLoggedIn && (
+                <span className="text-sm hidden sm:inline font-medium">
+                  {user?.full_name || 'Tài khoản'}
+                </span>
+              )}
             </button>
           </div>
         </div>

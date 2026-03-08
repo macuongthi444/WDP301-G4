@@ -1,26 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Menu, Search, User, ShoppingCart, LogOut, 
-  Users, Calendar, BookOpen, UserCircle, BellDot 
+import {
+  Menu, Search, User, LogOut,
+  Users, Calendar, BookOpen, UserCircle, BellDot,
+  ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import logo from '../assets/logo.png';
 import headerBg from '../assets/header-background.png';
 
-// Nếu bạn dùng các icon này ở phần student dropdown, cần import thêm:
-// import { Book, BarChart } from 'lucide-react';
-
 const Header = () => {
   const navigate = useNavigate();
   const { isLoggedIn, userRoles, logout, user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
-  const userDropdownRef = useRef(null);
   const notificationRef = useRef(null);
 
   const hasNotification = true; // → thay bằng logic thật sau
@@ -33,23 +29,18 @@ const Header = () => {
     }
   };
 
-  // Đóng dropdown user khi click bên ngoài
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
-        setIsUserDropdownOpen(false);
-      }
-      // Có thể thêm đóng notification nếu muốn
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setIsNotificationOpen(false);
       }
     };
 
-    if (isUserDropdownOpen || isNotificationOpen) {
+    if (isNotificationOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isUserDropdownOpen, isNotificationOpen]);
+  }, [isNotificationOpen]);
 
   const isTutor = userRoles?.some(role =>
     role.toUpperCase().includes('TUTOR') || role.toUpperCase() === 'ROLE_TUTOR'
@@ -58,18 +49,6 @@ const Header = () => {
   const isStudent = userRoles?.some(role =>
     role.toUpperCase().includes('STUDENT') || role.toUpperCase() === 'ROLE_STUDENT'
   );
-
-  const handleUserClick = () => {
-    if (isLoggedIn) {
-      setIsUserDropdownOpen(prev => !prev);
-    } else {
-      navigate('/login');
-    }
-  };
-
-  const handleNotificationClick = () => {
-    setIsNotificationOpen(prev => !prev);
-  };
 
   const stringToColor = (str) => {
     if (!str) return '#6b7280';
@@ -135,9 +114,56 @@ const Header = () => {
                 <Link to="/tutor/schedule" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
                   <Calendar size={16} /> Lịch dạy
                 </Link>
-                <Link to="/tutor/syllabus" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
-                  <BookOpen size={16} /> Giáo trình
-                </Link>
+
+                {/* === DROPDOWN GIÁO TRÌNH CHO TUTOR – HOVER === */}
+                {/* === DROPDOWN GIÁO TRÌNH CHO TUTOR – HOVER === */}
+                <div className="relative group">
+                  <div
+                    className="flex items-center gap-1.5 text-gray-800 hover:text-purple-600 font-medium whitespace-nowrap cursor-pointer"
+                  >
+                    <BookOpen size={16} />
+                    Giáo Trình
+                    <ChevronDown
+                      size={14}
+                      className="transition-transform duration-200 group-hover:rotate-180"
+                    />
+                  </div>
+
+                  {/* Dropdown content */}
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-150">
+                    {/* "Kéo dài" vùng hover bằng padding-top + pseudo element */}
+                    <div className="relative pt-3">
+                      {/* Pseudo element nối vùng hover (invisible bridge) */}
+                      <div className="absolute -top-3 left-0 right-0 h-6 bg-transparent pointer-events-auto"></div>
+
+                      <div className="py-2">
+                        <Link
+                          to="/tutor/syllabus"
+                          className="flex items-center px-5 py-3.5 text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                          onClick={() => {/* optional: đóng menu nếu cần */ }}
+                        >
+                          <BookOpen size={18} className="mr-3 text-purple-500" />
+                          Giáo trình
+                        </Link>
+                        <Link
+                          to="/tutor/exercises"
+                          className="flex items-center px-5 py-3.5 text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                        >
+                          <BookOpen size={18} className="mr-3 text-purple-500" />
+                          Bài tập
+                        </Link>
+                        <Link
+                          to="/tutor/submissions"
+                          className="flex items-center px-5 py-3.5 text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                        >
+                          <BookOpen size={18} className="mr-3 text-purple-500" />
+                          Bài nộp
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <Link to="/tutor/ai-assistant" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
                   <BookOpen size={16} /> Trợ lý AI
                 </Link>
@@ -147,8 +173,8 @@ const Header = () => {
                 <Link to="/student" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
                   <Calendar size={16} /> Thông tin học tập
                 </Link>
-                <Link to="/student" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
-                  <BookOpen size={16} /> Giáo Trình
+                <Link to="/student/courses" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
+                  <BookOpen size={16} /> Khóa học của tôi
                 </Link>
               </div>
             ) : (
@@ -163,13 +189,13 @@ const Header = () => {
             )}
           </div>
 
-          {/* Icons */}
+          {/* Icons section (giữ nguyên, user dropdown hover) */}
           <div className="flex items-center space-x-6">
             {/* Notification */}
             {isLoggedIn && (
               <div className="relative" ref={notificationRef}>
                 <button
-                  onClick={handleNotificationClick}
+                  onClick={() => setIsNotificationOpen(prev => !prev)}
                   className="text-gray-700 hover:text-purple-600 relative"
                   aria-label="Thông báo"
                 >
@@ -187,26 +213,15 @@ const Header = () => {
                       <h3 className="font-semibold text-gray-800">Thông báo</h3>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                      {/* Ví dụ thông báo */}
                       <div className="p-4 border-b hover:bg-gray-50 cursor-pointer">
                         <p className="text-sm font-medium">Học sinh mới đăng ký lớp Toán 10</p>
                         <p className="text-xs text-gray-500 mt-1">15 phút trước</p>
                       </div>
-                      <div className="p-4 border-b hover:bg-gray-50 cursor-pointer">
-                        <p className="text-sm font-medium">Buổi học hôm nay lúc 19:00 đã xác nhận</p>
-                        <p className="text-xs text-gray-500 mt-1">2 giờ trước</p>
-                      </div>
-                      <div className="p-4 text-center text-gray-500 text-sm">
-                        Bạn đã xem hết thông báo
-                      </div>
+                      {/* ... các thông báo khác */}
                     </div>
                     <div className="p-3 border-t text-center">
-                      <Link
-                        to="/notifications"
-                        className="text-purple-600 hover:underline text-sm"
-                        onClick={() => setIsNotificationOpen(false)}
-                      >
-                        Xem tất cả thông báo
+                      <Link to="/notifications" className="text-purple-600 hover:underline text-sm">
+                        Xem tất cả
                       </Link>
                     </div>
                   </div>
@@ -214,12 +229,11 @@ const Header = () => {
               </div>
             )}
 
-            {/* User section – bọc relative để dropdown định vị đúng */}
-            <div className="relative">
-              <button
-                onClick={handleUserClick}
-                className="text-gray-700 hover:text-purple-600 flex items-center gap-2"
-                aria-label="Tài khoản"
+            {/* User Dropdown - hover */}
+            
+            <div className="relative group">
+              <div
+                className="text-gray-700 hover:text-purple-600 flex items-center gap-2 cursor-pointer"
               >
                 {isLoggedIn ? (
                   user?.avatar ? (
@@ -245,21 +259,35 @@ const Header = () => {
                     {user?.full_name || 'Tài khoản'}
                   </span>
                 )}
-              </button>
 
-              {/* User Dropdown */}
-              {isUserDropdownOpen && isLoggedIn && (
+                {/* Mũi tên nhỏ để biết có dropdown (tùy chọn, có thể bỏ nếu không thích) */}
+                {isLoggedIn && (
+                  <ChevronDown
+                    size={14}
+                    className="transition-transform duration-200 group-hover:rotate-180 hidden sm:block"
+                  />
+                )}
+              </div>
+
+              {/* Dropdown content – fix hover gap */}
+              {isLoggedIn && (
                 <div
-                  ref={userDropdownRef}
-                  className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-[60] overflow-hidden"
+                  className={`
+        absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 
+        z-[60] overflow-hidden opacity-0 group-hover:opacity-100 
+        pointer-events-none group-hover:pointer-events-auto 
+        transition-opacity duration-150
+      `}
                 >
+                  {/* Cầu nối vô hình để hover không bị ngắt */}
+                  <div className="absolute -top-3 right-0 left-0 h-6 bg-transparent pointer-events-auto"></div>
+
                   <div className="py-2">
                     {isTutor && (
                       <>
                         <Link
                           to="/tutor/students"
                           className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                          onClick={() => setIsUserDropdownOpen(false)}
                         >
                           <Users size={18} className="mr-3" />
                           Quản lý học sinh
@@ -267,7 +295,6 @@ const Header = () => {
                         <Link
                           to="/tutor/classes"
                           className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                          onClick={() => setIsUserDropdownOpen(false)}
                         >
                           <BookOpen size={18} className="mr-3" />
                           Quản lý lớp học
@@ -275,7 +302,6 @@ const Header = () => {
                         <Link
                           to="/tutor/schedule"
                           className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                          onClick={() => setIsUserDropdownOpen(false)}
                         >
                           <Calendar size={18} className="mr-3" />
                           Lịch dạy
@@ -283,7 +309,6 @@ const Header = () => {
                         <Link
                           to="/tutor/profile"
                           className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                          onClick={() => setIsUserDropdownOpen(false)}
                         >
                           <UserCircle size={18} className="mr-3" />
                           Hồ sơ cá nhân
@@ -296,20 +321,17 @@ const Header = () => {
                         <Link
                           to="/student/courses"
                           className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                          onClick={() => setIsUserDropdownOpen(false)}
                         >
-                          <BookOpen size={18} className="mr-3" /> {/* thay Book nếu cần */}
+                          <BookOpen size={18} className="mr-3" />
                           Khóa học của tôi
                         </Link>
                         <Link
                           to="/student/schedule"
                           className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                          onClick={() => setIsUserDropdownOpen(false)}
                         >
                           <Calendar size={18} className="mr-3" />
                           Lịch học
                         </Link>
-                        {/* Thêm các link khác nếu cần */}
                       </>
                     )}
 
@@ -318,7 +340,6 @@ const Header = () => {
                     <button
                       onClick={() => {
                         logout();
-                        setIsUserDropdownOpen(false);
                         navigate('/');
                       }}
                       className="flex items-center w-full px-4 py-3 text-red-600 hover:bg-red-50"
@@ -337,7 +358,6 @@ const Header = () => {
         {isMobileMenuOpen && (
           <div className="lg:hidden mt-4 pb-4 border-t border-gray-200">
             <div className="flex flex-col space-y-4 pt-4">
-              {/* Mobile Search */}
               <form onSubmit={handleSearch} className="px-2">
                 <div className="relative">
                   <input
@@ -351,69 +371,63 @@ const Header = () => {
                 </div>
               </form>
 
-              {/* Mobile Nav */}
               {isLoggedIn && isTutor ? (
                 <>
-                  <Link
-                    to="/tutor/students"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center"
-                  >
-                    <Users size={18} className="mr-2" />
-                    Quản lý học sinh
+                  <Link to="/tutor/students" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <Users size={18} className="mr-2" /> Quản lý học sinh
                   </Link>
-                  {/* các link tutor khác tương tự */}
+                  <Link to="/tutor/classes" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <BookOpen size={18} className="mr-2" /> Quản lý lớp học
+                  </Link>
+                  <Link to="/tutor/schedule" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <Calendar size={18} className="mr-2" /> Lịch dạy
+                  </Link>
+
+                  {/* 3 link Giáo Trình cho tutor trên mobile */}
+                  <Link to="/tutor/syllabus" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <BookOpen size={18} className="mr-2" /> Giáo trình
+                  </Link>
+                  <Link to="/tutor/exercises" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <BookOpen size={18} className="mr-2" /> Bài tập
+                  </Link>
+                  <Link to="/tutor/submissions" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <BookOpen size={18} className="mr-2" /> Bài nộp
+                  </Link>
+
+                  <Link to="/tutor/ai-assistant" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <BookOpen size={18} className="mr-2" /> Trợ lý AI
+                  </Link>
                 </>
               ) : isLoggedIn && isStudent ? (
                 <>
-                  <Link
-                    to="/student"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center"
-                  >
-                    <Calendar size={18} className="mr-2" />
-                    Thông tin học tập
+                  <Link to="/student" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <Calendar size={18} className="mr-2" /> Thông tin học tập
                   </Link>
-                  {/* các link student khác */}
+                  <Link to="/student/courses" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center">
+                    <BookOpen size={18} className="mr-2" /> Khóa học của tôi
+                  </Link>
                 </>
               ) : (
                 <>
-                  <Link
-                    to="/introduction"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-3 text-gray-800 hover:bg-purple-50 hover:text-purple-600 rounded-lg"
-                  >
+                  <Link to="/introduction" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-800 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
                     Giới Thiệu
                   </Link>
-                  <Link
-                    to="/"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-3 text-gray-800 hover:bg-purple-50 hover:text-purple-600 rounded-lg"
-                  >
+                  <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-gray-800 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
                     Liên Hệ
                   </Link>
                 </>
               )}
 
-              {/* Mobile Auth */}
               {isLoggedIn ? (
                 <button
-                  onClick={() => {
-                    logout();
-                    setIsMobileMenuOpen(false);
-                    navigate('/');
-                  }}
+                  onClick={() => { logout(); setIsMobileMenuOpen(false); navigate('/'); }}
                   className="px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg text-left flex items-center"
                 >
-                  <LogOut size={18} className="mr-2" />
-                  Đăng xuất
+                  <LogOut size={18} className="mr-2" /> Đăng xuất
                 </button>
               ) : (
                 <button
-                  onClick={() => {
-                    navigate('/login');
-                    setIsMobileMenuOpen(false);
-                  }}
+                  onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}
                   className="px-4 py-3 text-purple-600 hover:bg-purple-50 rounded-lg text-left font-medium"
                 >
                   Đăng nhập

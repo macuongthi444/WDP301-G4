@@ -13,7 +13,7 @@ import ClassDetail from './Class/ClassDetail';
 import TutorSyllabus from './Syllabus/Syllabus';   
 import SyllabusDetail from './Syllabus/SyllabusDetail';            
 // import các page khác...
-
+import TutorAssignments from './Assignment/TutorAssignments'
 const TutorRoutes = () => {
   const { isLoggedIn, userRoles } = useAuth();
 
@@ -38,8 +38,8 @@ const TutorRoutes = () => {
       <Route path="classes/:classId" element={<ClassDetail />} />
       <Route path="syllabus" element={<TutorSyllabus />} />
       <Route path="syllabus/:id" element={<SyllabusDetail />} />
+<Route path="/assignments" element={<TutorAssignments />} />
 
-      {/* ... */}
       <Route path="*" element={<Navigate to="/tutor" replace />} />
     </Routes>
   );

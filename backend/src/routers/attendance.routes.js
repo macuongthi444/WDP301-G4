@@ -11,7 +11,7 @@ const {
 } = require('../controllers/attendance.controller');
 
 router.use(protect);
-router.use(authorize('tutor')); // chỉ tutor
+router.use(authorize('TUTOR'));
 
 // Điểm danh / cập nhật cho 1 học sinh
 router.put('/:classId/sessions/:sessionId/students/:studentId/attendance', markAttendanceForStudent);

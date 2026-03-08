@@ -115,7 +115,7 @@ const Header = () => {
                   <Calendar size={16} /> Lịch dạy
                 </Link>
 
-                {/* === DROPDOWN GIÁO TRÌNH CHO TUTOR – HOVER === */}
+                
                 {/* === DROPDOWN GIÁO TRÌNH CHO TUTOR – HOVER === */}
                 <div className="relative group">
                   <div
@@ -146,7 +146,7 @@ const Header = () => {
                           Giáo trình
                         </Link>
                         <Link
-                          to="/tutor/exercises"
+                          to="/tutor/assignments"
                           className="flex items-center px-5 py-3.5 text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
                         >
                           <BookOpen size={18} className="mr-3 text-purple-500" />
@@ -234,6 +234,12 @@ const Header = () => {
             <div className="relative group">
               <div
                 className="text-gray-700 hover:text-purple-600 flex items-center gap-2 cursor-pointer"
+                onClick={() => {
+      if (!isLoggedIn) {
+        navigate('/login');
+      }
+      // Nếu đã login thì để hover dropdown như cũ
+    }}
               >
                 {isLoggedIn ? (
                   user?.avatar ? (

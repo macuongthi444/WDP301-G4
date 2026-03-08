@@ -135,7 +135,7 @@ const Header = () => {
                 <Link to="/tutor/schedule" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
                   <Calendar size={16} /> Lịch dạy
                 </Link>
-                <Link to="/tutor/curriculum" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
+                <Link to="/tutor/syllabus" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
                   <BookOpen size={16} /> Giáo trình
                 </Link>
                 <Link to="/tutor/ai-assistant" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">

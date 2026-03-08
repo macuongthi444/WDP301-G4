@@ -17,78 +17,131 @@ exports.createSchedule = async (req, res) => {
       start_date,
       end_date,
       note = "",
-
       day_of_week,
       start_time,
       end_time,
       is_active = true,
       mode = "OFFLINE",
-      location,
-      online_link,
+      location = "",
+      online_link = "",
     } = req.body;
 
-    // validate grade
+    // ── VALIDATION CHI TIẾT ────────────────────────────────────────────────
+
+    // 1. grade
     const g = Number(grade);
     if (Number.isNaN(g) || g < 1 || g > 12) {
-      return res.status(400).json({ message: "grade phải từ 1 đến 12" });
+      return res.status(400).json({ message: "Grade phải là số từ 1 đến 12" });
     }
 
-    const classDoc = await Class.findOne({ _id: classId, tutor_user_id: tutorId });
-    if (!classDoc) return res.status(404).json({ message: "Không tìm thấy lớp hoặc không có quyền" });
+    // 2. day_of_week (phải là số 0-6)
+    const dow = Number(day_of_week);
+    if (Number.isNaN(dow) || dow < 0 || dow > 6) {
+      return res.status(400).json({ message: "day_of_week phải là số từ 0 đến 6" });
+    }
 
-    // ✅ Lưu grade + subject vào schedule
+    // 3. start_time & end_time (định dạng HH:mm)
+    if (!start_time || !end_time || !/^\d{2}:\d{2}$/.test(start_time) || !/^\d{2}:\d{2}$/.test(end_time)) {
+      return res.status(400).json({ message: "start_time và end_time phải có định dạng HH:mm" });
+    }
+
+    const [startH, startM] = start_time.split(":").map(Number);
+    const [endH, endM] = end_time.split(":").map(Number);
+
+    if (
+      Number.isNaN(startH) || Number.isNaN(startM) ||
+      Number.isNaN(endH) || Number.isNaN(endM) ||
+      startH < 0 || startH > 23 || startM < 0 || startM > 59 ||
+      endH < 0 || endH > 23 || endM < 0 || endM > 59
+    ) {
+      return res.status(400).json({ message: "Giờ/phút không hợp lệ" });
+    }
+
+    if (startH * 60 + startM >= endH * 60 + endM) {
+      return res.status(400).json({ message: "Giờ kết thúc phải lớn hơn giờ bắt đầu" });
+    }
+
+    // 4. start_date & end_date
+    if (!start_date || !/^\d{4}-\d{2}-\d{2}$/.test(start_date)) {
+      return res.status(400).json({ message: "start_date phải có định dạng YYYY-MM-DD" });
+    }
+
+    const startDateObj = new Date(start_date);
+    if (isNaN(startDateObj.getTime())) {
+      return res.status(400).json({ message: "start_date không hợp lệ" });
+    }
+
+    let endDateObj = null;
+    if (repeat_type === "WEEKLY") {
+      if (!end_date || !/^\d{4}-\d{2}-\d{2}$/.test(end_date)) {
+        return res.status(400).json({ message: "end_date bắt buộc khi repeat_type = WEEKLY" });
+      }
+      endDateObj = new Date(end_date);
+      if (isNaN(endDateObj.getTime()) || endDateObj < startDateObj) {
+        return res.status(400).json({ message: "end_date phải lớn hơn hoặc bằng start_date" });
+      }
+    } else {
+      // ONCE → end_date = start_date
+      endDateObj = startDateObj;
+    }
+
+    // 5. Kiểm tra quyền lớp
+    const classDoc = await Class.findOne({ _id: classId, tutor_user_id: tutorId });
+    if (!classDoc) {
+      return res.status(404).json({ message: "Không tìm thấy lớp hoặc bạn không có quyền" });
+    }
+
+    // ── TẠO SCHEDULE ────────────────────────────────────────────────────────
     const schedule = new WeeklySchedule({
       class_id: classId,
       grade: g,
-      subject: String(subject || "").trim() || "Toán",
+      subject: String(subject).trim() || "Toán",
       repeat_type,
-      start_date: start_date ? new Date(start_date) : null,
-      end_date: end_date ? new Date(end_date) : null,
-      note: String(note || "").trim(),
-      day_of_week,
+      start_date: startDateObj,
+      end_date: endDateObj,
+      note: String(note).trim(),
+      day_of_week: dow,
       start_time,
       end_time,
-      is_active,
+      is_active: Boolean(is_active),
       mode,
-      location,
-      online_link,
+      location: String(location).trim(),
+      online_link: String(online_link).trim(),
     });
-
     await schedule.save();
 
-    // ---- helper: lấy học sinh active (lấy 1 lần)
+    // ── SINH TEACHING SESSIONS (12 tuần tới) ────────────────────────────────
     const enrollments = await ClassEnrollment.find({ class_id: classId, status: "ACTIVE" }).lean();
     const activeStudents = enrollments.map(e => e.student_user_id).filter(Boolean);
 
-    // ---- Sinh TeachingSession + Attendance cho 12 tuần tới
     const weeksToGenerate = 12;
-
-    // startOfWeek = Thứ 2 tuần hiện tại (00:00)
     const startOfWeek = new Date();
-    const jsDay = startOfWeek.getDay(); // 0..6 (CN=0)
-    const diffToMonday = jsDay === 0 ? -6 : 1 - jsDay;
-    startOfWeek.setDate(startOfWeek.getDate() + diffToMonday);
+    startOfWeek.setDate(startOfWeek.getDate() + (1 - startOfWeek.getDay() || -6));
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const createdSessions = [];
+    const offsetFromMonday = dow === 0 ? 6 : dow - 1;
 
-    // ⚠️ Vì startOfWeek là Thứ 2, nên offset phải là (day_of_week - 1), CN=6
-    const offsetFromMonday = Number(day_of_week) === 0 ? 6 : Number(day_of_week) - 1;
+    const createdSessions = [];
 
     for (let w = 0; w < weeksToGenerate; w++) {
       const sessionDate = new Date(startOfWeek);
       sessionDate.setDate(sessionDate.getDate() + w * 7 + offsetFromMonday);
 
-      const [sh, sm] = String(start_time).split(":").map(Number);
-      const [eh, em] = String(end_time).split(":").map(Number);
+      // Bỏ qua nếu ngày đã qua
+      if (sessionDate < new Date()) continue;
 
       const startAt = new Date(sessionDate);
-      startAt.setHours(sh, sm, 0, 0);
+      startAt.setHours(startH, startM, 0, 0);
 
       const endAt = new Date(sessionDate);
-      endAt.setHours(eh, em, 0, 0);
+      endAt.setHours(endH, endM, 0, 0);
 
-      const exists = await TeachingSession.findOne({ class_id: classId, start_at: startAt });
+      // Kiểm tra trùng
+      const exists = await TeachingSession.findOne({
+        class_id: classId,
+        start_at: startAt,
+      });
+
       if (exists) continue;
 
       const session = await TeachingSession.create({
@@ -97,16 +150,15 @@ exports.createSchedule = async (req, res) => {
         start_at: startAt,
         end_at: endAt,
         mode,
-        location,
-        online_link,
+        location: location || "",
+        online_link: online_link || "",
         status: "PLANNED",
         generated_from_schedule: true,
       });
 
-      // Attendance mặc định
-      if (activeStudents.length) {
+      if (activeStudents.length > 0) {
         await Attendance.insertMany(
-          activeStudents.map((studentId) => ({
+          activeStudents.map(studentId => ({
             session_id: session._id,
             student_user_id: studentId,
             status: "NOT_MARKED",
@@ -121,13 +173,18 @@ exports.createSchedule = async (req, res) => {
     }
 
     return res.status(201).json({
-      message: `Tạo lịch tuần thành công. Đã sinh ${createdSessions.length} buổi học`,
+      message: `Tạo lịch thành công. Sinh ${createdSessions.length} buổi học`,
       schedule,
       generatedSessionsCount: createdSessions.length,
       activeStudentsCount: activeStudents.length,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error: error.message });
+    console.error("LỖI TẠO LỊCH:", error);
+    return res.status(500).json({
+      message: "Lỗi server khi tạo lịch dạy",
+      error: error.message,
+      // stack: error.stack  // chỉ bật khi dev, production thì bỏ
+    });
   }
 };
 // 2. Lấy danh sách lịch dạy của một lớp

@@ -26,7 +26,7 @@ const TutorClasses = () => {
     start_date: "",
     end_date: "",
   });
-
+  const [isCreating, setIsCreating] = useState(false);
   useEffect(() => {
     fetchClasses();
   }, []);
@@ -79,7 +79,8 @@ const TutorClasses = () => {
   const handleAddClass = async (e) => {
     e.preventDefault();
     if (!newClass.name) return alert("Tên lớp là bắt buộc");
-
+    if (isCreating) return;
+    setIsCreating(true);
     try {
       const res = await api.post("/class", newClass);
       setClasses((prev) => [...prev, res.data.data]);
@@ -96,6 +97,8 @@ const TutorClasses = () => {
       });
     } catch (err) {
       alert(err.response?.data?.message || "Tạo lớp thất bại");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -186,9 +189,8 @@ const TutorClasses = () => {
                   <div className="col-span-3 text-sm text-slate-700">{modeLabel(cls.default_mode)}</div>
                   <div className="col-span-3">
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${
-                        active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
-                      }`}
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
+                        }`}
                     >
                       {active ? "Hoạt động" : "Không hoạt động"}
                     </span>
@@ -306,9 +308,18 @@ const TutorClasses = () => {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-emerald-300 to-indigo-400 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:brightness-95"
+                  disabled={isCreating}
+                  className={`rounded-xl bg-gradient-to-r from-emerald-300 to-indigo-400 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:brightness-95 flex items-center gap-2
+      ${isCreating ? "opacity-70 cursor-not-allowed" : ""}`}
                 >
-                  Tạo lớp
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang tạo...
+                    </>
+                  ) : (
+                    "Tạo lớp"
+                  )}
                 </button>
               </div>
             </form>

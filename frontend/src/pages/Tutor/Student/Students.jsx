@@ -34,7 +34,7 @@ const TutorStudents = () => {
       setLoading(true);
       setError(null);
 
-      const res = await api.get("/students");
+      const res = await api.get("/students/my");
       const data = res.data?.data || res.data || [];
       setStudents(Array.isArray(data) ? data : []);
     } catch (err) {

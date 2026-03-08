@@ -27,7 +27,7 @@ const TutorRoutes = () => {
   return (
     <Routes>
       <Route path="dashboard" element={<TutorDashboard />} />           {/* /tutor */}
-      <Route path="students" element={<TutorStudents />} />
+      <Route path="students/my" element={<TutorStudents />} />
       <Route path="students/:studentId" element={<StudentDetail />} />
       <Route path="classes" element={<TutorClasses />} />
       <Route path="schedule" element={<TutorSchedule />} />

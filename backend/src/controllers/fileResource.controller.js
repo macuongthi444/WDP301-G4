@@ -4,6 +4,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const Syllabus = require('../models/syllabus.model');
+
 // Cấu hình multer lưu file vào public/uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

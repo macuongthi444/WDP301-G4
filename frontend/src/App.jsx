@@ -11,11 +11,14 @@ import HomePage from './pages/Home/Homepage';
 import LoginPage from './pages/Authentication/Login';
 import RegisterPage from './pages/Authentication/Register';
 //  import VerifyEmailPage from './pages/Authentication/VerifyEmail'
+// import ForgotPasswordPage from ...
+// import ResetPasswordPage from ...
 
 import TutorLayout from './pages/Tutor/TutorLayout';
-import ForgotPasswordPage from './pages/Authentication/ForgotPassword';
-import ResetPasswordPage from './pages/Authentication/ResetPassword';
-import VerifyEmailPage from './pages/Authentication/VerifyEmail';
+import TextBook from './pages/textbook/TextBook';
+import TextBookDetail from './pages/textbook/TextBookDetail';
+import Assignment from './pages/Assignment/Assignment';
+import AssignmentDetail from './pages/Assignment/AssignmentDetail';
 
 function App() {
   const location = useLocation();
@@ -35,7 +38,7 @@ function App() {
     <div className="min-h-screen bg-gray-50 font-sans antialiased flex flex-col">
       {!shouldHideHeader && <Header />}
 
-      <main className="flex-grow pt-0">
+      <main className="flex-grow">
         <Routes>
           {/* Public */}
           <Route path="/" element={<HomePage />} />
@@ -43,9 +46,9 @@ function App() {
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          {/* <Route path="/verify-email" element={<VerifyEmailPage />} /> */}
+          {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
+          {/* <Route path="/reset-password" element={<ResetPasswordPage />} /> */}
 
           {/* Protected routes theo role */}
           <Route element={<ProtectedRoute allowedRoles={['TUTOR']} />}>
@@ -55,6 +58,16 @@ function App() {
             <Route path="/student" element={<HomePage />} />
             <Route path="/student/*" element={<HomePage />} />
           </Route>
+
+          {/* Syllabus Router */}
+          <Route path="/textbook" element={<TextBook />} />
+          <Route path="/textbooks/:id" element={<TextBookDetail />} />
+
+
+          {/* Assygnment Router */}
+          <Route path="/assignments" element={<Assignment />} />
+          <Route path="/assignments/:id" element={<AssignmentDetail />} />
+
 
           {/* Ví dụ cho role khác (nếu có) */}
           {/* <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

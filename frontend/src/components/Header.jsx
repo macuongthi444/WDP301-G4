@@ -99,7 +99,7 @@ const Header = () => {
   };
   return (
     <div
-      className=" sticky top-0 bg-cover bg-center bg-no-repeat relative shadow-sm z-50"
+      className="bg-cover bg-center bg-no-repeat relative shadow-sm"
       style={{ backgroundImage: `url(${headerBg})`, minHeight: '100px' }}
     >
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm"></div>
@@ -152,7 +152,7 @@ const Header = () => {
                     <Calendar size={16} />
                     Thông tin học tập
                   </Link>
-                  <Link to="/student" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
+                  <Link to="/textbook" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
                     <BookOpen size={16} />
                     Giáo Trình
                   </Link>
@@ -166,6 +166,7 @@ const Header = () => {
                 <Link to="/" className="text-gray-800 hover:text-purple-600 font-medium">
                   Liên Hệ
                 </Link>
+
               </>
             )}
           </div>

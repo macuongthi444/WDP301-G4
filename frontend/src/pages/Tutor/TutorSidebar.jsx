@@ -1,13 +1,13 @@
 // src/components/TutorSidebar.jsx
 import React from 'react';
-import { NavLink ,useNavigate} from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Users, BookOpen, Calendar, Sparkles, LogOut, UserCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const TutorSidebar = () => {
   const { logout } = useAuth();
-const navigate = useNavigate();
-const handleLogout = () => {
+  const navigate = useNavigate();
+  const handleLogout = () => {
     logout();
     navigate('/');   // hoặc '/login'
   };
@@ -23,8 +23,7 @@ const handleLogout = () => {
         <NavLink
           to="/tutor/students"
           className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-              isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
+            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
             }`
           }
         >
@@ -35,8 +34,7 @@ const handleLogout = () => {
         <NavLink
           to="/tutor/classes"
           className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-              isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
+            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
             }`
           }
         >
@@ -47,8 +45,7 @@ const handleLogout = () => {
         <NavLink
           to="/tutor/schedule"
           className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-              isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
+            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
             }`
           }
         >
@@ -57,10 +54,9 @@ const handleLogout = () => {
         </NavLink>
 
         <NavLink
-          to="/tutor/curriculum"
+          to="/textbook"
           className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-              isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
+            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
             }`
           }
         >
@@ -71,8 +67,7 @@ const handleLogout = () => {
         <NavLink
           to="/tutor/ai-assistant"
           className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-              isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
+            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
             }`
           }
         >
@@ -83,8 +78,7 @@ const handleLogout = () => {
         <NavLink
           to="/tutor/profile"
           className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-              isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
+            `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
             }`
           }
         >

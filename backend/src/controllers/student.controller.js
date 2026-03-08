@@ -15,7 +15,7 @@ exports.createStudentByTutor = async (req, res) => {
     const tutor = req.user;
 
     // Kiểm tra quyền (đã fix ở bước trước, dùng cách linh hoạt)
-    const hasTutorRole = tutor.roles.some(role => 
+    const hasTutorRole = tutor.roles.some(role =>
       (typeof role === 'string' && role === 'TUTOR') ||
       (role && role.name === 'TUTOR')
     );
@@ -152,12 +152,15 @@ exports.getMyStudents = async (req, res) => {
 
     // Bây giờ dùng studentRole._id
     const students = await User.find({
-      roles: studentRole._id,  // ← dùng studentRole._id thay vì studentRoleId
-      // Nếu bạn đã thêm field tutor_id trong student_profile thì thêm điều kiện này:
-      // 'student_profile.tutor_id': tutorId,
-      // Hiện tại tạm lấy tất cả học sinh để test (sau này lọc theo tutor)
+      roles: studentRole._id,
     })
-      .select('full_name email dob gender school phone student_profile.status')
+      .select(
+        'full_name email phone dob gender status ' +
+        'student_profile.student_full_name ' +
+        'student_profile.school ' +
+        'student_profile.grade ' +
+        'student_profile.class_name'
+      )
       .lean();  // Tăng hiệu suất, không cần mongoose document
 
     res.status(200).json({
@@ -170,6 +173,126 @@ exports.getMyStudents = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy danh sách học sinh',
+      error: error.message,
+    });
+  }
+};
+
+
+// GET /api/students/:id
+exports.getStudentById = async (req, res) => {
+  try {
+    const studentId = req.params.studentId;
+    
+    const student = await User.findById(studentId)
+      .select('-password_hash -__v') // loại bỏ thông tin nhạy cảm
+      .populate('roles', 'name')     // nếu cần
+      .lean();
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy học sinh",
+      });
+    }
+
+
+    res.status(200).json({
+      success: true,
+      data: student,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+    });
+  }
+};
+exports.updateStudent = async (req, res) => {
+  try {
+    const tutor = req.user;
+    const studentId = req.params.studentId;
+    // Kiểm tra quyền tutor
+    const hasTutorRole = tutor.roles.some(role =>
+      (typeof role === 'string' && role === 'TUTOR') ||
+      (role && role.name === 'TUTOR')
+    );
+
+    if (!hasTutorRole) {
+      return res.status(403).json({
+        success: false,
+        message: 'Chỉ gia sư mới có quyền chỉnh sửa thông tin học sinh',
+      });
+    }
+
+    const student = await User.findById(studentId);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy học sinh',
+      });
+    }
+
+    // Chỉ cho phép cập nhật các trường an toàn
+    const allowedUpdates = [
+      'full_name', 'email', 'phone', 'dob', 'gender',
+      'student_profile.student_full_name',
+      'student_profile.school',
+      'student_profile.grade',
+      'student_profile.class_name',
+    ];
+
+    const updates = req.body;
+
+    // Xử lý cập nhật nested student_profile
+    if (updates.student_profile) {
+      Object.keys(updates.student_profile).forEach(key => {
+        if (student.student_profile) {
+          student.student_profile[key] = updates.student_profile[key];
+        } else {
+          student.student_profile = { [key]: updates.student_profile[key] };
+        }
+      });
+      delete updates.student_profile;
+    }
+
+    // Cập nhật các trường root
+    Object.keys(updates).forEach(key => {
+      if (allowedUpdates.includes(key)) {
+        student[key] = updates[key];
+      }
+    });
+
+    // Nếu email thay đổi → kiểm tra trùng lặp
+    if (updates.email && updates.email.toLowerCase() !== student.email) {
+      const emailExists = await User.findOne({ email: updates.email.toLowerCase() });
+      if (emailExists && emailExists._id.toString() !== studentId) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email đã được sử dụng bởi tài khoản khác',
+        });
+      }
+      student.email = updates.email.toLowerCase();
+    }
+
+    await student.save();
+
+    // Trả về dữ liệu đã cập nhật (không lộ password_hash)
+    const updatedStudent = await User.findById(studentId)
+      .select('-password_hash -__v')
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: 'Cập nhật thông tin học sinh thành công',
+      data: updatedStudent,
+    });
+  } catch (error) {
+    console.error('Update student error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật thông tin',
       error: error.message,
     });
   }

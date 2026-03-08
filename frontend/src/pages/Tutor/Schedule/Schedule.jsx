@@ -56,8 +56,7 @@ const TutorSchedule = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState(null);
+
   // Create modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newSchedule, setNewSchedule] = useState({
@@ -85,11 +84,7 @@ const TutorSchedule = () => {
     fetchClasses();
     fetchSchedules();
   }, []);
-  useEffect(() => {
-    if (isCreateModalOpen) {
-      setCreateError(null);
-    }
-  }, [isCreateModalOpen]);
+
   const fetchClasses = async () => {
     try {
       const res = await api.get("/class");
@@ -278,73 +273,37 @@ const TutorSchedule = () => {
   };
 
   // ---------- create schedule (backend giữ nguyên) ----------
-  const validateSchedule = () => {
-    if (!newSchedule.classId) return "Vui lòng chọn lớp học";
-    if (!newSchedule.start_time || !newSchedule.end_time) return "Vui lòng nhập giờ bắt đầu và kết thúc";
-
-    const start = newSchedule.start_time.split(":").map(Number);
-    const end = newSchedule.end_time.split(":").map(Number);
-    const startMin = start[0] * 60 + start[1];
-    const endMin = end[0] * 60 + end[1];
-
-    if (endMin <= startMin) return "Giờ kết thúc phải sau giờ bắt đầu";
-    if (newSchedule.mode === "OFFLINE" && !newSchedule.location.trim()) {
-      return "Vui lòng nhập địa điểm cho lớp OFFLINE";
-    }
-    if (newSchedule.mode === "ONLINE" && !newSchedule.online_link.trim()) {
-      return "Vui lòng nhập link online cho lớp ONLINE";
-    }
-    return null;
-  };
-
   const handleCreateSchedule = async (e) => {
-    e.preventDefault();
-    setCreateError(null);
+  e.preventDefault();
+  if (!newSchedule.classId) return alert("Vui lòng chọn lớp");
+  if (!newSchedule.start_date) return alert("Vui lòng chọn ngày bắt đầu");
+  if (newSchedule.repeat_type === "WEEKLY" && !newSchedule.end_date) {
+    return alert("Vui lòng chọn ngày kết thúc (Hằng tuần)");
+  }
 
-    const validationError = validateSchedule();
-    if (validationError) {
-      setCreateError(validationError);
-      return;
-    }
+  const cls = classes.find((c) => c._id === newSchedule.classId);
+  const classLevel = Number(cls?.level);
+  const gradeToSend = Number.isFinite(classLevel) ? classLevel : Number(newSchedule.grade || 1);
 
-    setIsCreating(true);
+  const payload = {
+    grade: gradeToSend,
+    subject: newSchedule.subject,
 
-    try {
-      await api.post(`/class/${newSchedule.classId}/schedules`, {
-        ...newSchedule,
-        day_of_week: Number(newSchedule.day_of_week), // đảm bảo là number
-      });
+    repeat_type: newSchedule.repeat_type,
+    day_of_week: Number(newSchedule.day_of_week),
 
-      // Thành công
-      alert("Tạo lịch dạy mới thành công!");
-      // hoặc dùng toast library nếu có (react-hot-toast, sonner,...)
+    start_date: newSchedule.start_date,
+    end_date: newSchedule.repeat_type === "ONCE" ? newSchedule.start_date : newSchedule.end_date,
 
-      setIsCreateModalOpen(false);
+    start_time: newSchedule.start_time,
+    end_time: newSchedule.end_time,
 
-      // Reset form
-      setNewSchedule({
-        classId: "",
-        day_of_week: 1,
-        start_time: "18:00",
-        end_time: "20:00",
-        mode: "OFFLINE",
-        location: "",
-        online_link: "",
-        is_active: true,
-      });
+    mode: newSchedule.mode,
+    location: newSchedule.mode === "OFFLINE" ? newSchedule.location : "",
+    online_link: newSchedule.mode === "ONLINE" ? newSchedule.online_link : "",
 
-      // Tải lại danh sách lịch
-      await fetchSchedules();
-    } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        err.message ||
-        "Không thể tạo lịch. Vui lòng thử lại sau.";
-      setCreateError(msg);
-      console.error("Create schedule error:", err);
-    } finally {
-      setIsCreating(false);
-    }
+    note: newSchedule.note,
+    is_active: !!newSchedule.is_active,
   };
 
   try {
@@ -480,87 +439,87 @@ const TutorSchedule = () => {
   };
 
   const MonthView = () => {
-    const weekdays = ["Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy", "Chủ Nhật"];
-    const cells = getMonthGrid(currentDate);
-    const todayStr = new Date().toDateString();
-    const month = currentDate.getMonth();
+  const weekdays = ["Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy", "Chủ Nhật"];
+  const cells = getMonthGrid(currentDate);
+  const todayStr = new Date().toDateString();
+  const month = currentDate.getMonth();
 
-    return (
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
-        <div className="grid grid-cols-7 gap-2">
-          {weekdays.map((w) => (
-            <div key={w} className="py-2 text-center text-sm font-bold text-slate-700 bg-slate-50 rounded-t-lg">
-              {w}
-            </div>
-          ))}
+  return (
+    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
+      <div className="grid grid-cols-7 gap-2">
+        {weekdays.map((w) => (
+          <div key={w} className="py-2 text-center text-sm font-bold text-slate-700 bg-slate-50 rounded-t-lg">
+            {w}
+          </div>
+        ))}
 
-          {cells.map((d, idx) => {
-            if (!d) return <div key={idx} className="h-[90px] rounded-xl bg-slate-50" />;
+        {cells.map((d, idx) => {
+          if (!d) return <div key={idx} className="h-[90px] rounded-xl bg-slate-50" />;
 
-            const inMonth = d.getMonth() === month;
-            const isToday = d.toDateString() === todayStr;
-            const count = getSchedulesForDate(d).length;
+          const inMonth = d.getMonth() === month;
+          const isToday = d.toDateString() === todayStr;
+          const count = getSchedulesForDate(d).length;
 
-            // Màu badge theo số buổi
-            let badgeClass = "bg-gray-500 text-white";
-            if (count === 1) badgeClass = "bg-emerald-500 text-white";
-            else if (count >= 2 && count <= 3) badgeClass = "bg-amber-500 text-white";
-            else if (count > 3) badgeClass = "bg-red-500 text-white animate-pulse";
+          // Màu badge theo số buổi
+          let badgeClass = "bg-gray-500 text-white";
+          if (count === 1) badgeClass = "bg-emerald-500 text-white";
+          else if (count >= 2 && count <= 3) badgeClass = "bg-amber-500 text-white";
+          else if (count > 3) badgeClass = "bg-red-500 text-white animate-pulse";
 
-            // Nền và viền ô
-            let cellClass = "border-slate-200 bg-white hover:bg-slate-50";
-            if (isToday) {
-              cellClass = "border-2 border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-200";
-            } else if (count > 0 && inMonth) {
-              cellClass = "border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/70";
-            }
+          // Nền và viền ô
+          let cellClass = "border-slate-200 bg-white hover:bg-slate-50";
+          if (isToday) {
+            cellClass = "border-2 border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-200";
+          } else if (count > 0 && inMonth) {
+            cellClass = "border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/70";
+          }
 
-            return (
-              <button
-                key={d.toISOString()}
-                onClick={() => openDayDetail(d)}
-                className={`h-[90px] rounded-xl border p-3 text-left transition-all duration-200 
+          return (
+            <button
+              key={d.toISOString()}
+              onClick={() => openDayDetail(d)}
+              className={`h-[90px] rounded-xl border p-3 text-left transition-all duration-200 
                 hover:shadow-md hover:scale-[1.02] ${cellClass} ${!inMonth ? "opacity-40" : ""}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div
-                    className={`text-base font-bold ${isToday ? "text-indigo-700" : "text-slate-900"}`}
-                  >
-                    {d.getDate()}
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className={`text-base font-bold ${isToday ? "text-indigo-700" : "text-slate-900"}`}
+                >
+                  {d.getDate()}
+                </div>
+
+                {count > 0 && (
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm ${badgeClass}`}>
+                    {count}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-1.5 text-xs">
+                {isToday && (
+                  <div className="font-semibold text-indigo-600 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span>
+                    Hôm nay
                   </div>
+                )}
 
-                  {count > 0 && (
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm ${badgeClass}`}>
-                      {count}
-                    </span>
-                  )}
-                </div>
+                {!isToday && count > 0 && (
+                  <span className="text-emerald-700 font-medium">
+                    {count} buổi dạy
+                  </span>
+                )}
 
-                <div className="mt-1.5 text-xs">
-                  {isToday && (
-                    <div className="font-semibold text-indigo-600 flex items-center gap-1.5">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span>
-                      Hôm nay
-                    </div>
-                  )}
-
-                  {!isToday && count > 0 && (
-                    <span className="text-emerald-700 font-medium">
-                      {count} buổi dạy
-                    </span>
-                  )}
-
-                  {!isToday && count === 0 && inMonth && (
-                    <span className="text-slate-500">Trống</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                {!isToday && count === 0 && inMonth && (
+                  <span className="text-slate-500">Trống</span>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
@@ -831,8 +790,38 @@ const TutorSchedule = () => {
             />
           </div>
         </div>
-      )}
-      
+
+        {/* Ghi chú */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Ghi chú</label>
+          <textarea
+            rows={4}
+            value={newSchedule.note}
+            onChange={(e) => setNewSchedule({ ...newSchedule, note: e.target.value })}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(false)}
+            className="rounded-xl bg-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300"
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            className="rounded-xl bg-gradient-to-r from-emerald-300 to-indigo-400 px-6 py-2 text-sm font-semibold text-white hover:brightness-95"
+          >
+            Tạo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
       {/* Day detail modal */}
       {selectedDate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

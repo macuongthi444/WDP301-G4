@@ -4,26 +4,35 @@ import { BookOpen, FileText, Edit, Trash2, Plus, Loader2, X } from "lucide-react
 import api from "../../../services/api";
 
 const SyllabusDetail = () => {
-  const { id } = useParams(); // syllabus _id từ URL: /tutor/syllabus/:id
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [syllabus, setSyllabus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Modal sửa syllabus
+  // Modal sửa
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ title: "", description: "", version: "" });
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    version: "",
+    gradeLevel: "",
+    subject: "",
+    classLevel: [],
+  });
   const [editing, setEditing] = useState(false);
 
   // Modal thêm tài liệu
   const [isAddFileModalOpen, setIsAddFileModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [filePreview, setFilePreview] = useState(null); // để hiển thị tên + size
+  const [filePreview, setFilePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
-  // State cho chế độ hiển thị danh sách tài liệu
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
+
+  // View mode cho danh sách file
+  const [viewMode, setViewMode] = useState("list");
+
   useEffect(() => {
     fetchSyllabusDetail();
   }, [id]);
@@ -34,11 +43,13 @@ const SyllabusDetail = () => {
       setError(null);
       const res = await api.get(`/syllabus/${id}`);
       setSyllabus(res.data.data);
-      // Khởi tạo form edit
       setEditForm({
         title: res.data.data.title || "",
         description: res.data.data.description || "",
         version: res.data.data.version || "1.0",
+        gradeLevel: res.data.data.gradeLevel || "",
+        subject: res.data.data.subject || "",
+        classLevel: res.data.data.classLevel?.map(cls => cls._id) || [],
       });
     } catch (err) {
       setError("Không thể tải chi tiết giáo trình");
@@ -48,7 +59,6 @@ const SyllabusDetail = () => {
     }
   };
 
-  // Xử lý sửa syllabus
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editForm.title.trim()) return;
@@ -65,7 +75,6 @@ const SyllabusDetail = () => {
     }
   };
 
-  // Xử lý xóa syllabus
   const handleDelete = async () => {
     if (!window.confirm("Bạn chắc chắn muốn xóa giáo trình này?")) return;
     try {
@@ -76,83 +85,29 @@ const SyllabusDetail = () => {
     }
   };
 
-  // Xử lý upload file mới
-  const handleAddFile = async (e) => {
-    e.preventDefault();
-    if (!selectedFile) {
-      setUploadError("Vui lòng chọn file");
-      return;
-    }
-
-    setUploading(true);
-    setUploadError(null);
-
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-    formData.append("ownerType", "SYLLABUS");
-    formData.append("ownerId", id);
-
-    try {
-      const res = await api.post("/file-resources/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      // Sau khi upload thành công, thêm file vào syllabus
-      await api.put(`/syllabus/${id}`, {
-        file_resources: [...(syllabus.file_resources || []), res.data.data._id],
-      });
-
-      setIsAddFileModalOpen(false);
-      setSelectedFile(null);
-      fetchSyllabusDetail();
-    } catch (err) {
-      setUploadError(err.response?.data?.message || "Upload thất bại");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
-      </div>
-    );
-  }
-
-  if (error || !syllabus) {
-    return (
-      <div className="text-center py-12 text-red-600">
-        {error || "Không tìm thấy giáo trình"}
-      </div>
-    );
-  }
   const openAddFileModal = () => {
     setSelectedFile(null);
     setFilePreview(null);
     setUploadError(null);
     setIsAddFileModalOpen(true);
   };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Kiểm tra kích thước frontend (tùy chọn, backend đã có 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setUploadError("File quá lớn (tối đa 10MB)");
       return;
     }
-
     setSelectedFile(file);
     setFilePreview({
       name: file.name,
       size: (file.size / 1024 / 1024).toFixed(2) + " MB",
-      type: file.type,
+      type: file.type.split("/")[1]?.toUpperCase() || "FILE",
     });
     setUploadError(null);
   };
 
-  // Xử lý submit upload
   const handleAddFileSubmit = async (e) => {
     e.preventDefault();
     if (!selectedFile) {
@@ -165,62 +120,80 @@ const SyllabusDetail = () => {
 
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("type", "FILE");           // hoặc "IMAGE" nếu là ảnh
+    formData.append("type", "FILE");
     formData.append("ownerType", "SYLLABUS");
     formData.append("ownerId", id);
 
     try {
-      // Bước 1: Upload file → nhận về FileResource document
       const uploadRes = await api.post("/file-resources/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const newFileId = uploadRes.data.data._id;
-
-      // Bước 2: Cập nhật syllabus → push ID file mới vào mảng file_resources
-      const currentFiles = syllabus.file_resources?.map(f => f._id) || [];
+      const currentIds = syllabus.file_resources?.map(f => f._id) || [];
       await api.put(`/syllabus/${id}`, {
-        file_resources: [...currentFiles, newFileId],
+        file_resources: [...currentIds, newFileId],
       });
 
-      // Thành công
       setIsAddFileModalOpen(false);
-      fetchSyllabusDetail(); // refresh chi tiết → thấy file mới
+      setSelectedFile(null);
+      fetchSyllabusDetail();
     } catch (err) {
-      const message = err.response?.data?.message || "Không thể tải file lên. Vui lòng thử lại.";
-      setUploadError(message);
-      console.error("Upload error:", err);
+      setUploadError(err.response?.data?.message || "Upload thất bại");
     } finally {
       setUploading(false);
     }
   };
-  const handleDeleteFile = async (fileId) => {
-  if (!window.confirm("Bạn có chắc muốn xóa tài liệu này không?")) return;
 
-  try {
-    await api.delete(`/file-resources/${fileId}`);
-    fetchSyllabusDetail();        // refresh lại danh sách
-  } catch (err) {
-    alert(err.response?.data?.message || "Xóa file thất bại");
-  }
-};
+  const handleDeleteFile = async (fileId) => {
+    if (!window.confirm("Bạn có chắc muốn xóa tài liệu này không?")) return;
+    try {
+      await api.delete(`/file-resources/${fileId}`);
+      fetchSyllabusDetail();
+    } catch (err) {
+      alert(err.response?.data?.message || "Xóa file thất bại");
+    }
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-96"><Loader2 className="h-12 w-12 animate-spin text-indigo-600" /></div>;
+  if (error || !syllabus) return <div className="text-center py-12 text-red-600">{error || "Không tìm thấy giáo trình"}</div>;
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <BookOpen className="h-10 w-10 text-indigo-600" />
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
+        <div className="flex items-start gap-4">
+          <BookOpen className="h-10 w-10 text-indigo-600 mt-1" />
           <div>
             <h1 className="text-3xl font-bold text-slate-900">{syllabus.title}</h1>
-            <p className="text-slate-600 mt-1">
-              Phiên bản: {syllabus.version || "1.0"}
+            <div className="flex flex-wrap gap-3 mt-3">
+              {syllabus.gradeLevel && (
+                <span className="bg-indigo-100 text-indigo-800 px-4 py-1.5 rounded-full text-sm font-medium">
+                  {syllabus.gradeLevel}
+                </span>
+              )}
+              {syllabus.subject && (
+                <span className="bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-medium">
+                  {syllabus.subject}
+                </span>
+              )}
+              {syllabus.classLevel?.length > 0 && (
+                <span className="bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-sm font-medium">
+                  Lớp: {syllabus.classLevel.map(cls => cls.name || cls.code || "Lớp").join(", ")}
+                </span>
+              )}
+            </div>
+            <p className="mt-3 text-slate-600 text-sm">
+              Phiên bản: {syllabus.version || "1.0"} • 
+              Khởi tạo: {new Date(syllabus.created_at).toLocaleString('vi-VN', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+              })}
             </p>
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => setIsEditModalOpen(true)}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -235,22 +208,22 @@ const SyllabusDetail = () => {
           </button>
           <button
             onClick={openAddFileModal}
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
           >
             <Plus size={18} /> Thêm tài liệu
           </button>
         </div>
       </div>
 
-      {/* Description */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-8 shadow-sm">
+      {/* Mô tả */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-10 shadow-sm">
         <h2 className="text-xl font-semibold mb-3">Mô tả</h2>
         <p className="text-slate-700 whitespace-pre-line">
-          {syllabus.description || "Chưa có mô tả"}
+          {syllabus.description || "Chưa có mô tả chi tiết cho giáo trình này."}
         </p>
       </div>
 
-      {/* Danh sách tài liệu */}
+   {/* Danh sách tài liệu */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
         <div className="bg-slate-50 px-6 py-4 border-b flex justify-between items-center">
           <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -378,20 +351,20 @@ const SyllabusDetail = () => {
         )}
       </div>
 
-      {/* ─── Modal Sửa ─── */}
+      {/* Modal Sửa - ĐÃ THÊM CÁC TRƯỜNG MỚI */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-2xl font-bold">Chỉnh sửa giáo trình</h2>
+          <div className="bg-white rounded-2xl p-7 w-full max-w-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Chỉnh sửa giáo trình</h2>
               <button onClick={() => setIsEditModalOpen(false)}>
-                <X size={24} className="text-slate-500" />
+                <X size={24} className="text-slate-500 hover:text-slate-800" />
               </button>
             </div>
 
             <form onSubmit={handleEditSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-1">Tiêu đề</label>
+                <label className="block text-sm font-medium mb-1">Tiêu đề <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={editForm.title}
@@ -400,6 +373,49 @@ const SyllabusDetail = () => {
                   required
                 />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Khối học</label>
+                  <select
+                    value={editForm.gradeLevel}
+                    onChange={(e) => setEditForm({ ...editForm, gradeLevel: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2.5"
+                  >
+                    <option value="">Chọn khối</option>
+                    <option value="Lớp 1">Lớp 1</option>
+                    <option value="Khối 12">Khối 12</option>
+                    <option value="Khối 12">Khối 12</option>
+                    <option value="Đại học">Đại học</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Môn học</label>
+                  <input
+                    type="text"
+                    value={editForm.subject}
+                    onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2.5"
+                    placeholder="Toán, Văn, Lý..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Lớp học áp dụng (ID lớp - tạm nhập)</label>
+                <input
+                  type="text"
+                  value={editForm.classLevel.join(", ")}
+                  onChange={(e) => {
+                    const ids = e.target.value.split(",").map(id => id.trim()).filter(Boolean);
+                    setEditForm({ ...editForm, classLevel: ids });
+                  }}
+                  className="w-full border rounded-lg px-4 py-2.5"
+                  placeholder="64f123abc..., 64f456def..."
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium mb-1">Mô tả</label>
                 <textarea
@@ -409,6 +425,7 @@ const SyllabusDetail = () => {
                   className="w-full border rounded-lg px-4 py-2.5"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium mb-1">Phiên bản</label>
                 <input
@@ -419,11 +436,11 @@ const SyllabusDetail = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-6">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-5 py-2.5 border rounded-lg"
+                  className="px-6 py-2.5 border rounded-lg text-slate-700 hover:bg-slate-50"
                 >
                   Hủy
                 </button>
@@ -432,7 +449,7 @@ const SyllabusDetail = () => {
                   disabled={editing}
                   className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
                 >
-                  {editing && <Loader2 className="animate-spin h-4 w-4" />}
+                  {editing && <Loader2 className="h-4 w-4 animate-spin" />}
                   Lưu thay đổi
                 </button>
               </div>

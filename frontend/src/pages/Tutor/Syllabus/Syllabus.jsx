@@ -20,6 +20,9 @@ const TutorSyllabus = () => {
     title: "",
     description: "",
     version: "1.0",
+    gradeLevel: "",
+    subject: "",
+    classLevel: [], // sẽ là mảng ID lớp học (string ObjectId)
   });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
@@ -33,7 +36,6 @@ const TutorSyllabus = () => {
       setLoading(true);
       setError(null);
       const res = await api.get("/syllabus");
-      
       setSyllabi(res.data.data || []);
     } catch (err) {
       setError("Không thể tải danh sách giáo trình");
@@ -63,15 +65,23 @@ const TutorSyllabus = () => {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         version: formData.version.trim() || "1.0",
-        // file_resources: []  // nếu sau này thêm upload file thì bổ sung ở đây
+        gradeLevel: formData.gradeLevel || undefined,
+        subject: formData.subject.trim() || undefined,
+        classLevel: formData.classLevel, // mảng ID lớp học (từ multiselect sau này)
       };
 
       await api.post("/syllabus", payload);
 
-      // Thành công → reset form, đóng modal, refresh danh sách
-      setFormData({ title: "", description: "", version: "1.0" });
+      setFormData({
+        title: "",
+        description: "",
+        version: "1.0",
+        gradeLevel: "",
+        subject: "",
+        classLevel: [],
+      });
       setIsAddModalOpen(false);
-      await fetchSyllabi(); // refresh bất đồng bộ
+      await fetchSyllabi();
     } catch (err) {
       setCreateError(
         err.response?.data?.message || "Tạo giáo trình thất bại. Vui lòng thử lại."
@@ -89,28 +99,32 @@ const TutorSyllabus = () => {
         if (hasFileFilter === "WITHOUT_FILE") return (syl.file_resources?.length || 0) === 0;
         return true;
       })
-      .filter((syl) =>
-        q
-          ? [syl.title || "", syl.description || "", syl.version || ""]
-              .join(" ")
-              .toLowerCase()
-              .includes(q)
-          : true
-      );
+      .filter((syl) => {
+        if (!q) return true;
+        const hay = [
+          syl.title || "",
+          syl.description || "",
+          syl.version || "",
+          syl.gradeLevel || "",
+          syl.subject || "",
+          (syl.classLevel || []).map(cls => cls?.name || cls?.code || "").join(" "),
+        ].join(" ").toLowerCase();
+        return hay.includes(q);
+      });
   }, [syllabi, query, hasFileFilter]);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
+    <div className="mx-auto max-w-7xl px-6 py-10">
       {/* Header */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between mb-8">
         <div className="flex items-start gap-3">
-          <BookOpen className="mt-1 h-7 w-7 text-slate-900" />
+          <BookOpen className="mt-1 h-8 w-8 text-slate-900" />
           <h1 className="text-3xl font-extrabold text-slate-900">Quản lý giáo trình</h1>
         </div>
 
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-indigo-500 px-6 py-3 font-semibold text-white shadow hover:brightness-95 active:brightness-90"
+          className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-indigo-500 px-6 py-3 font-semibold text-white shadow hover:brightness-95"
         >
           <Plus size={18} /> Thêm giáo trình
         </button>
@@ -123,12 +137,12 @@ const TutorSyllabus = () => {
       )}
 
       {/* Search + Filter */}
-      <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center">
+      <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center mb-6">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Tìm kiếm giáo trình..."
-          className="w-full md:max-w-[380px] rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="Tìm kiếm theo tiêu đề, môn, khối, lớp..."
+          className="w-full md:max-w-[420px] rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <select
           value={hasFileFilter}
@@ -144,17 +158,19 @@ const TutorSyllabus = () => {
       {/* Table */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="grid grid-cols-12 gap-4 bg-slate-100 px-6 py-4 text-base font-extrabold text-slate-800">
-          <div className="col-span-5">Tiêu đề</div>
-          <div className="col-span-3">Phiên bản</div>
-          <div className="col-span-4">Tài liệu đính kèm</div>
+          <div className="col-span-4">Tiêu đề & Thông tin</div>
+          <div className="col-span-2">Khối / Môn</div>
+          <div className="col-span-2">Lớp học</div>
+          <div className="col-span-2">Phiên bản</div>
+          <div className="col-span-2">Tài liệu</div>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="h-10 w-10 animate-spin text-slate-700" />
+          <div className="flex justify-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-slate-700" />
           </div>
         ) : visibleSyllabi.length === 0 ? (
-          <div className="py-12 text-center text-slate-500">Chưa có giáo trình nào</div>
+          <div className="py-16 text-center text-slate-500">Chưa có giáo trình nào</div>
         ) : (
           <div className="divide-y divide-slate-100">
             {visibleSyllabi.map((syl) => {
@@ -162,21 +178,30 @@ const TutorSyllabus = () => {
               return (
                 <button
                   key={syl._id}
-                  onClick={() => navigate(`/tutor/syllabus/${syl._id}`)} // Nếu có route chi tiết
-                  className="grid w-full grid-cols-12 gap-4 px-6 py-4 text-left hover:bg-slate-50"
+                  onClick={() => navigate(`/tutor/syllabus/${syl._id}`)}
+                  className="grid w-full grid-cols-12 gap-4 px-6 py-5 text-left hover:bg-slate-50 transition"
                 >
-                  <div className="col-span-5 text-sm font-semibold text-slate-900">
-                    {syl.title}
+                  <div className="col-span-4">
+                    <div className="font-semibold text-slate-900">{syl.title}</div>
                     {syl.description && (
                       <p className="mt-1 text-xs text-slate-500 line-clamp-1">
                         {syl.description}
                       </p>
                     )}
                   </div>
-                  <div className="col-span-3 text-sm font-semibold text-slate-900">
+                  <div className="col-span-2 text-sm text-slate-700">
+                    {syl.gradeLevel && <div>{syl.gradeLevel}</div>}
+                    {syl.subject && <div className="font-medium">{syl.subject}</div>}
+                  </div>
+                  <div className="col-span-2 text-sm text-slate-700">
+                    {syl.classLevel?.length > 0
+                      ? syl.classLevel.map(cls => cls.name || cls.code || "Lớp").join(", ")
+                      : "Chưa gán lớp"}
+                  </div>
+                  <div className="col-span-2 text-sm font-semibold text-slate-900">
                     {syl.version || "1.0"}
                   </div>
-                  <div className="col-span-4 text-sm text-slate-700">
+                  <div className="col-span-2 text-sm text-slate-700">
                     {fileCount > 0 ? (
                       <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
                         <FileText size={14} className="mr-1" />
@@ -184,7 +209,7 @@ const TutorSyllabus = () => {
                       </span>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                        Không có tài liệu
+                        Không có
                       </span>
                     )}
                   </div>
@@ -195,26 +220,22 @@ const TutorSyllabus = () => {
         )}
       </div>
 
-      {/* ──────────────────────────────────────────────── */}
-      {/*               MODAL TẠO MỚI (POPUP)              */}
-      {/* ──────────────────────────────────────────────── */}
+      {/* Modal Tạo mới - ĐÃ THÊM CÁC TRƯỜNG MỚI */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-xl rounded-2xl bg-white p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
             <button
-              onClick={() => {
-                if (!creating) setIsAddModalOpen(false);
-              }}
+              onClick={() => !creating && setIsAddModalOpen(false)}
               disabled={creating}
-              className="absolute right-5 top-5 rounded-full p-2 text-slate-500 hover:bg-slate-100 disabled:opacity-40"
+              className="absolute right-5 top-5 rounded-full p-2 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
             >
               <X size={24} />
             </button>
 
             <h2 className="text-2xl font-bold text-slate-900">Tạo giáo trình mới</h2>
-            <p className="mt-1 text-sm text-slate-500">Điền thông tin cơ bản để bắt đầu</p>
+            <p className="mt-1 text-sm text-slate-500 mb-6">Điền thông tin để tạo syllabus</p>
 
-            <form onSubmit={handleCreateSubmit} className="mt-6 space-y-5">
+            <form onSubmit={handleCreateSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-slate-700">
                   Tiêu đề <span className="text-red-500">*</span>
@@ -226,9 +247,60 @@ const TutorSyllabus = () => {
                   onChange={handleInputChange}
                   disabled={creating}
                   required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:bg-slate-50"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 disabled:bg-slate-50"
                   placeholder="Ví dụ: Giáo trình Toán 10 - Cơ bản"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Khối học</label>
+                  <select
+                    name="gradeLevel"
+                    value={formData.gradeLevel}
+                    onChange={handleInputChange}
+                    disabled={creating}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 disabled:bg-slate-50"
+                  >
+                    <option value="">Chọn khối</option>
+                    <option value="Lớp 1">Lớp 1</option>
+                    <option value="Lớp 2">Lớp 2</option>
+                    {/* Thêm các option khác tương ứng */}
+                    <option value="Khối 12">Khối 12</option>
+                    <option value="Đại học">Đại học</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Môn học</label>
+                  <input
+                    type="text"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    disabled={creating}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 disabled:bg-slate-50"
+                    placeholder="Toán, Văn, Lý, Hóa..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Lớp học áp dụng (ID lớp - tạm nhập thủ công)</label>
+                <input
+                  type="text"
+                  name="classLevelTemp" // tạm để nhập string, sau này thay bằng multiselect
+                  value={formData.classLevel.join(", ")}
+                  onChange={(e) => {
+                    const ids = e.target.value.split(",").map(id => id.trim()).filter(Boolean);
+                    setFormData(prev => ({ ...prev, classLevel: ids }));
+                  }}
+                  disabled={creating}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 disabled:bg-slate-50"
+                  placeholder="64f123abc..., 64f456def... (phân cách bằng dấu phẩy)"
+                />
+                <p className="text-xs text-slate-500 mt-1">Sau này thay bằng dropdown/multiselect chọn lớp</p>
               </div>
 
               <div>
@@ -239,8 +311,8 @@ const TutorSyllabus = () => {
                   onChange={handleInputChange}
                   disabled={creating}
                   rows={3}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:bg-slate-50"
-                  placeholder="Mô tả ngắn gọn về giáo trình này..."
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 disabled:bg-slate-50"
+                  placeholder="Mô tả ngắn gọn về giáo trình..."
                 />
               </div>
 
@@ -252,13 +324,13 @@ const TutorSyllabus = () => {
                   value={formData.version}
                   onChange={handleInputChange}
                   disabled={creating}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:bg-slate-50"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 disabled:bg-slate-50"
                   placeholder="1.0"
                 />
               </div>
 
               {createError && (
-                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200">
                   {createError}
                 </div>
               )}
@@ -268,7 +340,7 @@ const TutorSyllabus = () => {
                   type="button"
                   onClick={() => !creating && setIsAddModalOpen(false)}
                   disabled={creating}
-                  className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-lg border border-slate-300 px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Hủy
                 </button>

@@ -1,37 +1,37 @@
-import React from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import React from "react";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 
-import ProtectedRoute from './route/ProtectedRoute';
+import ProtectedRoute from "./route/ProtectedRoute";
 
 // Components
-import Header from './components/Header';
+import Header from "./components/Header";
 
 // Pages
-import HomePage from './pages/Home/Homepage';
-import LoginPage from './pages/Authentication/Login';
-import RegisterPage from './pages/Authentication/Register';
+import HomePage from "./pages/Home/Homepage";
+import LoginPage from "./pages/Authentication/Login";
+import RegisterPage from "./pages/Authentication/Register";
 //  import VerifyEmailPage from './pages/Authentication/VerifyEmail'
 
-import TutorLayout from './pages/Tutor/TutorLayout';
-import ForgotPasswordPage from './pages/Authentication/ForgotPassword';
-import ResetPasswordPage from './pages/Authentication/ResetPassword';
-import VerifyEmailPage from './pages/Authentication/VerifyEmail';
+import TutorLayout from "./pages/Tutor/TutorLayout";
+import ForgotPasswordPage from "./pages/Authentication/ForgotPassword";
+import ResetPasswordPage from "./pages/Authentication/ResetPassword";
+import VerifyEmailPage from "./pages/Authentication/VerifyEmail";
+import AdminLayout from "./pages/Admin/AdminLayout";
 
 function App() {
   const location = useLocation();
 
   const hideHeaderPaths = [
-    '/login',
-    '/register',
-    '/forgot-password',
-    '/reset-password',
-    '/verify-email',
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
   ];
 
   const shouldHideHeader = hideHeaderPaths.includes(location.pathname);
 
   return (
-
     <div className="min-h-screen bg-gray-50 font-sans antialiased flex flex-col">
       {!shouldHideHeader && <Header />}
 
@@ -48,12 +48,15 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Protected routes theo role */}
-          <Route element={<ProtectedRoute allowedRoles={['TUTOR']} />}>
+          <Route element={<ProtectedRoute allowedRoles={["TUTOR"]} />}>
             <Route path="/tutor/*" element={<TutorLayout />} />
           </Route>
-          <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
+          <Route element={<ProtectedRoute allowedRoles={["STUDENT"]} />}>
             <Route path="/student" element={<HomePage />} />
             <Route path="/student/*" element={<HomePage />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+            <Route path="/admin/*" element={<AdminLayout />} />
           </Route>
 
           {/* Ví dụ cho role khác (nếu có) */}
@@ -67,7 +70,9 @@ function App() {
             element={
               <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
                 <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
-                <p className="text-xl text-gray-600 mb-8">Trang không tồn tại</p>
+                <p className="text-xl text-gray-600 mb-8">
+                  Trang không tồn tại
+                </p>
                 <a
                   href="/"
                   className="px-8 py-4 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition"
@@ -80,7 +85,6 @@ function App() {
         </Routes>
       </main>
     </div>
-
   );
 }
 

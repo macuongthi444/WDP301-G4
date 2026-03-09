@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
+  Menu,
+  Search,
+  User,
+  LogOut,
+  Users,
+  Calendar,
+  BookOpen,
+  UserCircle,
+  LayoutDashboard,
   Menu, Search, User, LogOut,
   Users, Calendar, BookOpen, UserCircle, BellDot,
   ChevronDown
@@ -12,7 +21,8 @@ import headerBg from '../assets/header-background.png';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { isLoggedIn, userRoles, logout, user } = useAuth();
+  const { isLoggedIn, userRoles = [], logout, user } = useAuth();
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -22,15 +32,45 @@ const Header = () => {
   const hasNotification = true; // → thay bằng logic thật sau
   const notificationCount = 3;
 
+  const normalizeRole = (role) => String(role || '').toUpperCase();
+
+  const isTutor = userRoles?.some(
+    (role) =>
+      normalizeRole(role).includes('TUTOR') ||
+      normalizeRole(role) === 'ROLE_TUTOR'
+  );
+
+  const isStudent = userRoles?.some(
+    (role) =>
+      normalizeRole(role).includes('STUDENT') ||
+      normalizeRole(role) === 'ROLE_STUDENT'
+  );
+
+  const isAdmin = userRoles?.some(
+    (role) =>
+      normalizeRole(role).includes('ADMIN') ||
+      normalizeRole(role) === 'ROLE_ADMIN'
+  );
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsMobileMenuOpen(false);
     }
   };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target)
+      ) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+
+    if (isUserDropdownOpen) {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setIsNotificationOpen(false);
       }
@@ -39,6 +79,7 @@ const Header = () => {
     if (isNotificationOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
+
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isNotificationOpen]);
 
@@ -78,6 +119,13 @@ const Header = () => {
     return initials.toUpperCase();
   };
 
+  const handleLogout = () => {
+    logout();
+    setIsUserDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+    navigate('/');
+  };
+
   return (
     <div
       className="sticky top-0 bg-cover bg-center bg-no-repeat relative shadow-sm z-50"
@@ -87,7 +135,6 @@ const Header = () => {
 
       <nav className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="lg:hidden p-2 text-gray-700 hover:text-purple-600"
@@ -96,13 +143,100 @@ const Header = () => {
             <Menu size={28} />
           </button>
 
-          {/* Logo */}
           <Link to="/" className="flex-shrink-0">
-            <img src={logo} alt="Tutor Note" className="h-14 sm:h-16 object-contain" />
+            <img
+              src={logo}
+              alt="Tutor Note"
+              className="h-14 sm:h-16 object-contain"
+            />
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-10 flex-1 justify-center">
+            {isLoggedIn && isAdmin ? (
+              <div className="hidden lg:flex items-center space-x-6 flex-1 justify-center text-sm">
+                <Link
+                  to="/admin/dashboard"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+                <Link
+                  to="/admin/accounts"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Users size={16} />
+                  Danh sách tài khoản
+                </Link>
+              </div>
+            ) : isLoggedIn && isTutor ? (
+              <div className="hidden lg:flex items-center space-x-6 flex-1 justify-center text-sm">
+                <Link
+                  to="/tutor/students"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Users size={16} />
+                  Quản lý học sinh
+                </Link>
+                <Link
+                  to="/tutor/classes"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <BookOpen size={16} />
+                  Quản lý lớp học
+                </Link>
+                <Link
+                  to="/tutor/schedule"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Calendar size={16} />
+                  Lịch dạy
+                </Link>
+                <Link
+                  to="/tutor/curriculum"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <BookOpen size={16} />
+                  Giáo trình
+                </Link>
+                <Link
+                  to="/tutor/ai-assistant"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <BookOpen size={16} />
+                  Trợ lý AI
+                </Link>
+              </div>
+            ) : isLoggedIn && isStudent ? (
+              <div className="hidden lg:flex items-center space-x-6 flex-1 justify-center text-sm">
+                <Link
+                  to="/student"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Calendar size={16} />
+                  Thông tin học tập
+                </Link>
+                <Link
+                  to="/student"
+                  className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <BookOpen size={16} />
+                  Giáo trình
+                </Link>
+              </div>
+            ) : (
+              <>
+                <Link
+                  to="/introduction"
+                  className="text-gray-800 hover:text-purple-600 font-medium"
+                >
+                  Giới Thiệu
+                </Link>
+                <Link
+                  to="/products"
+                  className="text-gray-800 hover:text-purple-600 font-medium"
+                >
+                  Sản phẩm
             {isLoggedIn && isTutor ? (
               <div className="flex items-center space-x-6 text-sm">
                 <Link to="/tutor/students/my" className="text-gray-800 hover:text-purple-600 font-medium flex items-center gap-1.5 whitespace-nowrap">
@@ -189,6 +323,146 @@ const Header = () => {
             )}
           </div>
 
+          {!isAdmin && (
+            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm sản phẩm..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-5 py-3 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-purple-600"
+                >
+                  <Search size={22} />
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="flex items-center space-x-6">
+            {!isAdmin && (
+              <button className="md:hidden text-gray-700 hover:text-purple-600">
+                <Search size={24} />
+              </button>
+            )}
+
+            <button
+              onClick={handleUserClick}
+              className="text-gray-700 hover:text-purple-600 flex items-center gap-2"
+              aria-label="Tài khoản"
+            >
+              {isLoggedIn && user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt="Avatar"
+                  className="h-8 w-8 rounded-full object-cover border border-purple-300"
+                />
+              ) : (
+                <User size={26} />
+              )}
+              {isLoggedIn && (
+                <span className="text-sm hidden sm:inline">
+                  {user?.full_name || 'Tài khoản'}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {isUserDropdownOpen && isLoggedIn && (
+          <div
+            ref={userDropdownRef}
+            className="absolute right-4 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden"
+          >
+            <div className="py-2">
+              {isAdmin && (
+                <>
+                  <Link
+                    to="/admin/dashboard"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <LayoutDashboard size={18} className="mr-3" />
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/admin/accounts"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <Users size={18} className="mr-3" />
+                    Danh sách tài khoản
+                  </Link>
+                </>
+              )}
+
+              {isTutor && (
+                <>
+                  <Link
+                    to="/tutor/students"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <Users size={18} className="mr-3" />
+                    Quản lý học sinh
+                  </Link>
+                  <Link
+                    to="/tutor/classes"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <BookOpen size={18} className="mr-3" />
+                    Quản lý lớp học
+                  </Link>
+                  <Link
+                    to="/tutor/schedule"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <Calendar size={18} className="mr-3" />
+                    Lịch dạy
+                  </Link>
+                  <Link
+                    to="/tutor/profile"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <UserCircle size={18} className="mr-3" />
+                    Hồ sơ cá nhân
+                  </Link>
+                </>
+              )}
+
+              {isStudent && (
+                <>
+                  <Link
+                    to="/student"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <Calendar size={18} className="mr-3" />
+                    Thông tin học tập
+                  </Link>
+                  <Link
+                    to="/student"
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                  >
+                    <BookOpen size={18} className="mr-3" />
+                    Giáo trình
+                  </Link>
+                </>
+              )}
+
+              <hr className="my-1 border-gray-200" />
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full px-4 py-3 text-red-600 hover:bg-red-50"
           {/* Icons section (giữ nguyên, user dropdown hover) */}
           <div className="flex items-center space-x-6">
             {/* Notification */}
@@ -360,10 +634,47 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden mt-4 pb-4 border-t border-gray-200">
             <div className="flex flex-col space-y-4 pt-4">
+              {!isAdmin && (
+                <form onSubmit={handleSearch} className="px-2">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm sản phẩm..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-5 py-3 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                    <Search
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                      size={20}
+                    />
+                  </div>
+                </form>
+              )}
+
+              {isLoggedIn && isAdmin ? (
+                <>
+                  <Link
+                    to="/admin/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center"
+                  >
+                    <LayoutDashboard size={18} className="mr-2" />
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/admin/accounts"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-4 py-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg flex items-center"
+                  >
+                    <Users size={18} className="mr-2" />
+                    Danh sách tài khoản
+                  </Link>
+                </>
+              ) : isLoggedIn && isTutor ? (
               <form onSubmit={handleSearch} className="px-2">
                 <div className="relative">
                   <input
@@ -426,6 +737,7 @@ const Header = () => {
 
               {isLoggedIn ? (
                 <button
+                  onClick={handleLogout}
                   onClick={() => { logout(); setIsMobileMenuOpen(false); navigate('/'); }}
                   className="px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg text-left flex items-center"
                 >

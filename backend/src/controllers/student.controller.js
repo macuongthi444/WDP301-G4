@@ -1,4 +1,5 @@
 // src/controllers/student.controller.js
+const mongoose = require('mongoose');
 const User = require('../models/user.model');
 const Role = require('../models/role.model');
 const bcrypt = require('bcryptjs');
@@ -70,6 +71,7 @@ exports.createStudentByTutor = async (req, res) => {
       class_name: class_name?.trim(),
       gender,
       dob: dob ? new Date(dob) : undefined,
+     tutor: tutor._id,
       tutor_schedules: tutor_schedules.map(s => ({
         weekday: s.weekday,
         startTime: s.startTime,
@@ -129,7 +131,7 @@ exports.createStudentByTutor = async (req, res) => {
 };
 // src/controllers/student.controller.js
 
-exports.getMyStudents = async (req, res) => {
+exports.getStudents = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
       return res.status(401).json({
@@ -293,6 +295,48 @@ exports.updateStudent = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi cập nhật thông tin',
+      error: error.message,
+    });
+  }
+};
+exports.getMyStudents = async (req, res) => {
+  try {
+    const tutorId = req.user._id;
+
+    const studentRole = await Role.findOne({ name: 'STUDENT' });
+    if (!studentRole) {
+      return res.status(500).json({
+        success: false,
+        message: 'Hệ thống chưa có role STUDENT',
+      });
+    }
+
+    const students = await User.find({
+      roles: studentRole._id,
+      'student_profile.tutor': tutorId,  // lọc theo tutor chủ quản
+      // 'student_profile.status': 'ACTIVE'   // có thể bật nếu muốn chỉ lấy hs active
+    })
+      .select(
+        'full_name email phone dob gender status ' +
+        'student_profile.student_full_name ' +
+        'student_profile.school ' +
+        'student_profile.grade ' +
+        'student_profile.class_name ' +
+        'student_profile.tutor_schedules'
+      )
+      .sort({ createdAt: -1 }) // mới nhất lên đầu (tùy chọn)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      data: students,
+    });
+  } catch (error) {
+    console.error('Lỗi getMyStudents:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi lấy danh sách học sinh',
       error: error.message,
     });
   }

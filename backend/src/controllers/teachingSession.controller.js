@@ -185,3 +185,93 @@ exports.getSessionUIDetailByDate = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+exports.getTutorAllSessions = async (req, res) => {
+  try {
+    const tutorId = req.user._id; // from auth middleware (jwt / passport / ...)
+
+    // Optional query filters
+    const { 
+      startDate,      // yyyy-mm-dd
+      endDate,        // yyyy-mm-dd
+      status,         // PLANNED, COMPLETED, CANCELLED, ...
+      mode,           // ONLINE / OFFLINE
+      classId,        // filter by one specific class
+      limit = 50,
+      page = 1
+    } = req.query;
+
+    const limitNum = parseInt(limit, 10);
+    const skip = (parseInt(page, 10) - 1) * limitNum;
+
+    // Build filter
+    const filter = {
+      // Only sessions from classes that belong to this tutor
+      class_id: { $in: await getTutorClassIds(tutorId) }
+    };
+
+    if (classId) {
+      filter.class_id = classId;
+    }
+
+    if (startDate || endDate) {
+      filter.start_at = {};
+      if (startDate) filter.start_at.$gte = new Date(startDate);
+      if (endDate)   filter.start_at.$lte = new Date(`${endDate}T23:59:59.999Z`);
+    }
+
+    if (status) {
+      filter.status = status.toUpperCase();
+    }
+
+    if (mode) {
+      filter.mode = mode.toUpperCase();
+    }
+
+    // Query
+    const sessions = await TeachingSession.find(filter)
+      .populate({
+        path: 'class_id',
+        select: 'name level tutor_user_id default_mode default_location default_online_link',
+        // You can populate students if your Class model has student_ids array
+        // populate: { path: 'students', select: 'fullName email' }
+      })
+      .populate({
+        path: 'schedule_id',
+        select: 'day_of_week start_time end_time repeat_type note is_active'
+      })
+      .sort({ start_at: 1 })           // sắp xếp theo thời gian sớm → muộn
+      .skip(skip)
+      .limit(limitNum)
+      .lean();                         // faster if you don't need mongoose documents
+
+    const total = await TeachingSession.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      data: sessions,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+
+  } catch (error) {
+    console.error('getTutorAllSessions error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
+// Helper: get all class _ids of this tutor
+async function getTutorClassIds(tutorId) {
+  const classes = await Class.find(
+    { tutor_user_id: tutorId },
+    { _id: 1 }
+  ).lean();
+  return classes.map(c => c._id);
+}

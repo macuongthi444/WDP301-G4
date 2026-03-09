@@ -7,7 +7,12 @@ const AssignmentSchema = new mongoose.Schema(
     class_id: { type: mongoose.Schema.Types.ObjectId, ref: "Class", required: true },
     session_id: { type: mongoose.Schema.Types.ObjectId, ref: "TeachingSession" }, // optional
     syllabus_id: { type: mongoose.Schema.Types.ObjectId, ref: "Syllabus" },        // optional
-
+    tutor_user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     title: { type: String, required: true, trim: true },
     description: { type: String },
 

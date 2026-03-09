@@ -35,5 +35,5 @@ router.post(
   "/:classId/sessions/:sessionId/save-ui",
   mustFn(saveCtrl.saveSessionUI, "saveSessionUI")
 );
-
+router.get('/', mustFn(tsCtrl.getTutorAllSessions, "getTutorAllSessions"));
 module.exports = router;

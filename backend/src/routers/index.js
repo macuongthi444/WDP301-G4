@@ -13,11 +13,10 @@ const weeklyScheduleRoutes = require('./weeklySchedule.routes');
 const studentRoutes =  require('./student.routes');
 const teachingSessionRoutes = require('./teachingSession.routes');
 const attendanceRoutes = require('./attendance.routes');
+const assignmentRoutes = require('./assignment.routes');
 // Nếu sau này có thêm router khác, import ở đây
 // Ví dụ:
 // const userRoutes = require('./user.routes');
-// const classRoutes = require('./class.routes');
-// const attendanceRoutes = require('./attendance.routes');
 // Gắn các router con vào router chính
 router.use('/roles', roleRoutes);
 router.use('/auth', authRoutes);
@@ -29,7 +28,7 @@ router.use('/class', weeklyScheduleRoutes);
 router.use('/students', studentRoutes); 
 router.use('/teaching-sessions',teachingSessionRoutes);
 router.use('/attendance',attendanceRoutes);
-
+router.use('/assignments', assignmentRoutes);
 // // Thêm các route khác ở đây khi có
 // router.use('/users', userRoutes);
 // router.use('/classes', classRoutes);
@@ -48,6 +47,7 @@ router.get('/', (req, res) => {
       '/api/students',
       '/api/teaching-sessions',
       '/api/attendance',
+      '/api/assignments',
       // Thêm các endpoint khác khi có
     ]
   });

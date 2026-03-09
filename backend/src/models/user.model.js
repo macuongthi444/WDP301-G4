@@ -12,7 +12,11 @@ const StudentProfileSchema = new mongoose.Schema(
     school: { type: String, trim: true },
     grade: { type: String, trim: true },     // "8", "10", "11"...
     class_name: { type: String, trim: true },     // "8A1", "10 Toán"...
-
+    tutor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',          // tham chiếu đến collection users
+      // index: true        // nên thêm index nếu query nhiều
+    },
 
     tutor_schedules: [{
       weekday: { type: Number, required: true, min: 0, max: 6 }, // 0=CN, 1=T2...

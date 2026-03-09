@@ -7,7 +7,7 @@ const TutorStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-const navigate = useNavigate();
+  const navigate = useNavigate();
   // Search/filter UI only
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | ACTIVE | INACTIVE
@@ -34,7 +34,7 @@ const navigate = useNavigate();
       setLoading(true);
       setError(null);
 
-      const res = await api.get("/students");
+      const res = await api.get("/students/my");
       const data = res.data?.data || res.data || [];
       setStudents(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -287,9 +287,9 @@ const navigate = useNavigate();
       </div>
 
       {/* Table */}
-      {/* Table */}
       <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-[3fr_1fr_2fr_2fr_1.5fr] gap-4 bg-slate-100 px-6 py-4 text-base font-extrabold text-slate-800 min-w-[900px]"> {/* min-w để buộc rộng hơn */}
+        {/* Header */}
+        <div className="grid grid-cols-[3fr_1fr_2fr_2fr_1.5fr] gap-4 bg-slate-100 px-6 py-4 text-base font-extrabold text-slate-800 min-w-[900px]">
           <div>Tên học sinh</div>
           <div className="text-center">Khối</div>
           <div>Lớp</div>
@@ -297,6 +297,7 @@ const navigate = useNavigate();
           <div className="text-center">Trạng thái</div>
         </div>
 
+        {/* Body */}
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-10 w-10 animate-spin text-slate-700" />
@@ -308,16 +309,13 @@ const navigate = useNavigate();
             {visibleStudents.map((s, idx) => {
               const statusInfo = getStudentStatus(s);
               return (
-                <div
+                <button
                   key={s?._id || s?.id || idx}
-                  className="grid grid-cols-[3fr_1fr_2fr_2fr_1.5fr] gap-4 px-6 py-4 hover:bg-slate-50 items-center min-w-[900px]"
+                  onClick={() => navigate(`/tutor/students/${s._id}`)}
+                  className="grid w-full grid-cols-[3fr_1fr_2fr_2fr_1.5fr] gap-4 px-6 py-4 text-left hover:bg-slate-50 items-center min-w-[900px] transition-colors"
                 >
                   <div className="text-sm font-semibold text-slate-900 truncate">
-                    <button 
-                    onClick={() => navigate(`/tutor/students/${s._id}`)}
-                      className="hover:text-indigo-600 hover:underline">
-                      {getName(s)}
-                    </button>
+                    {getName(s)}
                   </div>
                   <div className="text-sm text-slate-700 text-center">
                     {getGrade(s)}
@@ -335,12 +333,13 @@ const navigate = useNavigate();
                       {statusInfo.label}
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
         )}
       </div>
+
 
       {/* Modal thêm học sinh */}
       {isModalOpen && (

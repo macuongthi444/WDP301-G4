@@ -21,7 +21,7 @@ const handleLogout = () => {
       {/* Menu links */}
       <nav className="flex-1 p-4 space-y-2">
         <NavLink
-          to="/tutor/students"
+          to="/tutor/students/my"
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
               isActive ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'

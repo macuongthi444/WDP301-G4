@@ -7,10 +7,23 @@ exports.createSyllabus = async (req, res) => {
   try {
     const tutorId = req.user._id;
 
-    const { title, description, version, file_resources = [] } = req.body;
+    const {
+      title,
+      description,
+      version,
+      gradeLevel,
+      subject,
+      classLevel = [], // giờ là mảng ObjectId (string dạng "64f...abc")
+      file_resources = [],
+    } = req.body;
 
     if (!title) {
       return res.status(400).json({ message: 'Tiêu đề syllabus là bắt buộc' });
+    }
+
+    // Kiểm tra cơ bản (tùy chọn): classLevel phải là mảng ObjectId hợp lệ
+    if (classLevel.length > 0 && !classLevel.every(id => mongoose.Types.ObjectId.isValid(id))) {
+      return res.status(400).json({ message: 'Một số ID lớp học không hợp lệ' });
     }
 
     const syllabus = new Syllabus({
@@ -18,13 +31,17 @@ exports.createSyllabus = async (req, res) => {
       title,
       description,
       version: version || '1.0',
-      file_resources, // array ID của FileResource (nếu có)
+      gradeLevel,
+      subject,
+      classLevel, // mảng ObjectId
+      file_resources,
     });
 
     await syllabus.save();
-
-    // Populate file_resources nếu cần
-    await syllabus.populate('file_resources');
+    await syllabus.populate([
+      'file_resources',
+      'classLevel' // populate thêm thông tin lớp học
+    ]);
 
     res.status(201).json({
       message: 'Tạo syllabus thành công',
@@ -83,11 +100,30 @@ exports.updateSyllabus = async (req, res) => {
 
     const updates = req.body;
 
+    // Cho phép cập nhật các trường
+    const allowedUpdates = [
+      'title', 'description', 'version',
+      'gradeLevel', 'subject', 'classLevel',
+      'file_resources'
+    ];
+
+    const validUpdates = {};
+    Object.keys(updates).forEach(key => {
+      if (allowedUpdates.includes(key)) {
+        validUpdates[key] = updates[key];
+      }
+    });
+
+    // Kiểm tra classLevel nếu có update
+    if (validUpdates.classLevel && !validUpdates.classLevel.every(id => mongoose.Types.ObjectId.isValid(id))) {
+      return res.status(400).json({ message: 'Một số ID lớp học không hợp lệ' });
+    }
+
     const updatedSyllabus = await Syllabus.findOneAndUpdate(
       { _id: syllabusId, tutor_user_id: tutorId },
-      updates,
+      validUpdates,
       { new: true, runValidators: true }
-    ).populate('file_resources');
+    ).populate(['file_resources', 'classLevel']);
 
     if (!updatedSyllabus) {
       return res.status(404).json({ message: 'Không tìm thấy syllabus hoặc không có quyền' });

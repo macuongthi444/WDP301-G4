@@ -10,8 +10,10 @@ import TutorClasses from './Class/Class';
 import TutorSchedule from './Schedule/Schedule';
 import TeachingSessionUIDetail from "./TeachingSession/TeachingSessionUIDetail"; //
 import ClassDetail from './Class/ClassDetail';
+import TutorSyllabus from './Syllabus/Syllabus';   
+import SyllabusDetail from './Syllabus/SyllabusDetail';            
 // import các page khác...
-
+import TutorAssignments from './Assignment/TutorAssignments'
 const TutorRoutes = () => {
   const { isLoggedIn, userRoles } = useAuth();
 
@@ -27,15 +29,17 @@ const TutorRoutes = () => {
   return (
     <Routes>
       <Route path="dashboard" element={<TutorDashboard />} />           {/* /tutor */}
-      <Route path="students" element={<TutorStudents />} />
+      <Route path="students/my" element={<TutorStudents />} />
       <Route path="students/:studentId" element={<StudentDetail />} />
       <Route path="classes" element={<TutorClasses />} />
       <Route path="schedule" element={<TutorSchedule />} />
 
       <Route path="teaching/:classId" element={<TeachingSessionUIDetail />} />
       <Route path="classes/:classId" element={<ClassDetail />} />
+      <Route path="syllabus" element={<TutorSyllabus />} />
+      <Route path="syllabus/:id" element={<SyllabusDetail />} />
+<Route path="/assignments" element={<TutorAssignments />} />
 
-      {/* ... */}
       <Route path="*" element={<Navigate to="/tutor" replace />} />
     </Routes>
   );

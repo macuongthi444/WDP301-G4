@@ -21,6 +21,7 @@ const ProfilePage = () => {
   const { user, logout } = useAuth();
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   // Profile data
   const [profileData, setProfileData] = useState({
@@ -30,6 +31,32 @@ const ProfilePage = () => {
     roles: user?.roles || [],
     status: user?.status || '',
   });
+
+  // Fetch user profile data ngay lúc component mount
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        const userData = response.data.user;
+        setProfileData({
+          full_name: userData.full_name || user?.full_name || '',
+          email: userData.email || user?.email || '',
+          phone: userData.phone || '',
+          roles: userData.roles || user?.roles || [],
+          status: userData.status || user?.status || '',
+        });
+      } catch (err) {
+        console.error('Lỗi fetch profile:', err);
+        // Giữ nguyên dữ liệu cũ nếu API fail
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    if (user) {
+      fetchProfileData();
+    }
+  }, [user]);
 
   // Edit phone state
   const [editedPhone, setEditedPhone] = useState(profileData.phone);
@@ -239,6 +266,13 @@ const ProfilePage = () => {
 
           {/* Content */}
           <div className="p-6 sm:p-8 space-y-8">
+            {isLoadingProfile ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                <p className="text-slate-600">Đang tải thông tin...</p>
+              </div>
+            ) : (
+            <>
             {/* Basic Info Section */}
             <div>
               <h2 className="text-xl font-bold text-slate-900 mb-4">Thông tin cá nhân</h2>
@@ -500,6 +534,8 @@ const ProfilePage = () => {
                 </button>
               </form>
             </div>
+            </>
+            )}
           </div>
         </div>
       </div>

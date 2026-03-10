@@ -21,6 +21,12 @@ const AssignmentSchema = new mongoose.Schema(
 
     due_at: { type: Date },
     status: { type: String, enum: ASSIGNMENT_STATUS, default: "DRAFT" },
+    files: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "FileResource",
+      },
+    ],
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" }, collection: "assignments" }
 );

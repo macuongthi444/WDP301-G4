@@ -13,7 +13,7 @@ exports.createSyllabus = async (req, res) => {
       version,
       gradeLevel,
       subject,
-      classLevel = [], // giờ là mảng ObjectId (string dạng "64f...abc")
+      classLevel = [], 
       file_resources = [],
     } = req.body;
 

@@ -1,7 +1,7 @@
 // src/pages/tutor/TutorAssignmentDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../../services/api';
 import { BookOpen, Edit, Lock, Clock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -16,7 +16,7 @@ const TutorAssignmentDetail = () => {
   useEffect(() => {
     const fetchDetail = async () => {
       try {
-        const res = await axios.get(`/api/assignments/${id}`);
+        const res = await api.get(`/assignments/${id}`);
         setAssignment(res.data.assignment);
         setFormData({
           title: res.data.assignment.title,
@@ -36,7 +36,7 @@ const TutorAssignmentDetail = () => {
     if (!window.confirm('Bạn chắc chắn muốn đóng bài tập này? Học sinh sẽ không nộp được nữa.')) return;
 
     try {
-      await axios.put(`/api/assignments/${id}`, { status: 'CLOSED' });
+      await api.put(`/assignments/${id}`, { status: 'CLOSED' });
       setAssignment({ ...assignment, status: 'CLOSED' });
       toast.success('Đã đóng bài tập');
     } catch (err) {
@@ -47,7 +47,7 @@ const TutorAssignmentDetail = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.put(`/api/assignments/${id}`, formData);
+      const res = await api.put(`/assignments/${id}`, formData);
       setAssignment(res.data.assignment);
       setIsEditModalOpen(false);
       toast.success('Cập nhật thành công');
@@ -139,7 +139,7 @@ const TutorAssignmentDetail = () => {
 
       {/* Modal Edit Assignment */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/25 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 max-w-lg w-full mx-4">
             <h2 className="text-2xl font-bold mb-6">Chỉnh sửa bài tập</h2>
             <form onSubmit={handleUpdate}>

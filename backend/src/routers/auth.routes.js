@@ -9,7 +9,8 @@ const {
   verifyEmail,
   forgotPassword,
   resetPassword,
-  getMe
+  getMe,
+  changePassword,
 } = require('../controllers/auth.controller');  
 
 router.post('/register', register);
@@ -18,4 +19,6 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/login', login);
 router.get('/me', protect, getMe); // authMiddleware là middleware check token
+router.post('/change-password', protect, changePassword); // Đổi mật khẩu khi đã đăng nhập
+
 module.exports = router;

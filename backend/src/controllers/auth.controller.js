@@ -256,7 +256,7 @@ exports.resetPassword = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     // req.user được set từ middleware verifyToken
-    const user = await User.findById(req.user.id).populate('roles', 'name');
+    const user = await User.findById(req.user._id).populate('roles', 'name');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.json({
@@ -271,5 +271,50 @@ exports.getMe = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// CHANGE PASSWORD - Người dùng đã đăng nhập thay đổi mật khẩu
+// Không cần OTP, chỉ cần nhập mật khẩu hiện tại + mật khẩu mới
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id; // Từ middleware protect
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Không xác thực được người dùng' });
+    }
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Thiếu mật khẩu hiện tại hoặc mật khẩu mới' });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ message: 'Mật khẩu mới không được giống mật khẩu cũ' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
+    }
+
+    // Kiểm tra mật khẩu hiện tại có đúng không
+    const isMatch = await comparePassword(currentPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Mật khẩu hiện tại không chính xác' });
+    }
+
+    // Hash mật khẩu mới
+    const hashedNewPassword = await hashPassword(newPassword);
+    user.password_hash = hashedNewPassword;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại với mật khẩu mới.',
+    });
+  } catch (error) {
+    console.error('changePassword error:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };

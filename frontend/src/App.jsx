@@ -17,6 +17,7 @@ import ForgotPasswordPage from "./pages/Authentication/ForgotPassword";
 import ResetPasswordPage from "./pages/Authentication/ResetPassword";
 import VerifyEmailPage from "./pages/Authentication/VerifyEmail";
 import AdminLayout from "./pages/Admin/AdminLayout";
+import ProfilePage from "./pages/Profile/Profile";
 
 function App() {
   const location = useLocation();
@@ -46,6 +47,11 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+          {/* Profile - dành cho tất cả người dùng đã đăng nhập */}
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN", "TUTOR", "STUDENT"]} />}>
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
 
           {/* Protected routes theo role */}
           <Route element={<ProtectedRoute allowedRoles={["TUTOR"]} />}>

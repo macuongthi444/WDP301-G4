@@ -153,3 +153,55 @@ exports.approveUser = async (req, res) => {
     });
   }
 };
+
+// Cập nhật profile của user (phone)
+// Endpoint cho phép user đăng nhập sửa thông tin cá nhân
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const userId = req.user._id; // Từ middleware auth
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Không xác thực được người dùng' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy user' });
+    }
+
+    // Validate phone if provided
+    if (phone) {
+      const phoneTrimmed = String(phone).trim();
+      // Phone validation: Vietnamese phone pattern
+      if (phoneTrimmed && !/^(84|0[3-9])[0-9]{8,9}$/.test(phoneTrimmed)) {
+        return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+      }
+      user.phone = phoneTrimmed || null;
+    }
+
+    await user.save();
+
+    // Return updated user info
+    const updatedUser = await User.findById(userId).populate('roles', 'name');
+
+    return res.status(200).json({
+      message: 'Cập nhật hồ sơ thành công',
+      user: {
+        _id: updatedUser._id,
+        email: updatedUser.email,
+        full_name: updatedUser.full_name,
+        phone: updatedUser.phone || '',
+        roles: updatedUser.roles.map(role => role.name),
+        status: updatedUser.status,
+      },
+    });
+  } catch (error) {
+    console.error('updateUserProfile error:', error);
+    return res.status(500).json({
+      message: 'Lỗi server khi cập nhật hồ sơ',
+      error: error.message,
+    });
+  }
+};

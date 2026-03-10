@@ -298,6 +298,13 @@ const Header = () => {
                         >
                           <Users size={18} className="mr-3" /> Danh sách tài khoản
                         </Link>
+                        <Link
+                          to="/profile"
+                          className="flex px-4 py-3 hover:bg-purple-50 hover:text-purple-600"
+                          onClick={() => setIsUserDropdownOpen(false)}
+                        >
+                          <UserCircle size={18} className="mr-3" /> Hồ sơ cá nhân
+                        </Link>
                       </>
                     )}
 
@@ -325,7 +332,7 @@ const Header = () => {
                           <Calendar size={18} className="mr-3" /> Lịch dạy
                         </Link>
                         <Link
-                          to="/tutor/profile"
+                          to="/profile"
                           className="flex px-4 py-3 hover:bg-purple-50 hover:text-purple-600"
                           onClick={() => setIsUserDropdownOpen(false)}
                         >
@@ -349,6 +356,13 @@ const Header = () => {
                           onClick={() => setIsUserDropdownOpen(false)}
                         >
                           <Calendar size={18} className="mr-3" /> Lịch học
+                        </Link>
+                        <Link
+                          to="/profile"
+                          className="flex px-4 py-3 hover:bg-purple-50 hover:text-purple-600"
+                          onClick={() => setIsUserDropdownOpen(false)}
+                        >
+                          <UserCircle size={18} className="mr-3" /> Hồ sơ cá nhân
                         </Link>
                       </>
                     )}
@@ -395,6 +409,10 @@ const Header = () => {
                   <Link to="/admin/accounts" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 hover:bg-purple-50 flex items-center">
                     <Users size={18} className="mr-2" /> Danh sách tài khoản
                   </Link>
+                  <hr className="my-2 border-gray-200" />
+                  <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 hover:bg-purple-50 flex items-center">
+                    <UserCircle size={18} className="mr-2" /> Hồ sơ cá nhân
+                  </Link>
                 </>
               ) : isLoggedIn && isTutor ? (
                 <>
@@ -413,6 +431,10 @@ const Header = () => {
                   <Link to="/tutor/ai-assistant" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 hover:bg-purple-50 flex items-center">
                     <BookOpen size={18} className="mr-2" /> Trợ lý AI
                   </Link>
+                  <hr className="my-2 border-gray-200" />
+                  <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 hover:bg-purple-50 flex items-center">
+                    <UserCircle size={18} className="mr-2" /> Hồ sơ cá nhân
+                  </Link>
                 </>
               ) : isLoggedIn && isStudent ? (
                 <>
@@ -421,6 +443,10 @@ const Header = () => {
                   </Link>
                   <Link to="/student/courses" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 hover:bg-purple-50 flex items-center">
                     <BookOpen size={18} className="mr-2" /> Khóa học của tôi
+                  </Link>
+                  <hr className="my-2 border-gray-200" />
+                  <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 hover:bg-purple-50 flex items-center">
+                    <UserCircle size={18} className="mr-2" /> Hồ sơ cá nhân
                   </Link>
                 </>
               ) : (

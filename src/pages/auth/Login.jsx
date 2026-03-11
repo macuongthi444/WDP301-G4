@@ -35,7 +35,7 @@ function Login() {
       if (user.role === 'tutor') {
         navigate('/dashboard');
       } else {
-        navigate('/student-home');
+        navigate('/role-selection');
       }
     } catch (error) {
       setLoading(false);
@@ -55,7 +55,7 @@ function Login() {
       if (user.role === 'tutor') {
         navigate('/dashboard');
       } else {
-        navigate('/student-home');
+        navigate('/role-selection');
       }
     } catch (error) {
       setLoading(false);

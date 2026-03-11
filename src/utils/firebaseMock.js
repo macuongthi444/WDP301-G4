@@ -2,10 +2,10 @@
 
 const MOCK_USERS = {
   'tutor@gmail.com': { uid: 'tutor-123', displayName: 'Gia sư mẫu (Hùng)', email: 'tutor@gmail.com', role: 'tutor' },
-  'student@gmail.com': { 
-    uid: 'student-456', 
-    displayName: 'Học sinh mẫu (An)', 
-    email: 'student@gmail.com', 
+  'student@gmail.com': {
+    uid: 'student-456',
+    displayName: 'Học sinh mẫu (An)',
+    email: 'student@gmail.com',
     role: 'student',
     tutorId: 'tutor-123',
     studentId: 'student-456'

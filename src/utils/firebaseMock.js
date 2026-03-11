@@ -2,7 +2,14 @@
 
 const MOCK_USERS = {
   'tutor@gmail.com': { uid: 'tutor-123', displayName: 'Gia sư mẫu (Hùng)', email: 'tutor@gmail.com', role: 'tutor' },
-  'student@gmail.com': { uid: 'student-456', displayName: 'Học sinh mẫu (An)', email: 'student@gmail.com', role: 'student' }
+  'student@gmail.com': { 
+    uid: 'student-456', 
+    displayName: 'Học sinh mẫu (An)', 
+    email: 'student@gmail.com', 
+    role: 'student',
+    tutorId: 'tutor-123',
+    studentId: 'student-456'
+  }
 };
 
 export let auth = {
@@ -10,13 +17,13 @@ export let auth = {
 };
 
 // Auto-login to tutor by default if needed, or keep it null to test login page
-auth.currentUser = MOCK_USERS['tutor@gmail.com']; 
+auth.currentUser = MOCK_USERS['tutor@gmail.com'];
 
 export const db = {};
 
 export const onAuthStateChanged = (authObj, callback) => {
   callback(auth.currentUser);
-  return () => {}; // Unsubscribe no-op
+  return () => { }; // Unsubscribe no-op
 };
 
 export const signOut = async () => {
@@ -88,7 +95,7 @@ const mockData = {
       'sch-2': { id: 'sch-2', dayOfWeek: 'T4', time: '14:00', classId: 'class-2' }
     },
     'student-456': {
-       // Student's view of schedules usually fetched by tutorId, handled in onValue
+      // Student's view of schedules usually fetched by tutorId, handled in onValue
     }
   },
   'attendance': {
@@ -98,7 +105,13 @@ const mockData = {
     'tutor-123': {}
   },
   'paymentInfo': {
-    'tutor-123': { bankName: 'Vietcombank', accountNumber: '123456789', accountName: 'NGUYEN VAN HUNG' }
+    'tutor-123': {
+      bankName: 'Vietcombank',
+      bankBin: '970436',
+      accountNumber: '123456789',
+      accountName: 'NGUYEN VAN A',
+      accountHolder: 'NGUYEN VAN A'
+    }
   }
 };
 
@@ -113,12 +126,12 @@ export const onValue = (refObj, callback) => {
       break;
     }
   }
-  
+
   callback({
     val: () => data,
     exists: () => data !== null && data !== undefined
   });
-  return () => {}; // Unsubscribe no-op
+  return () => { }; // Unsubscribe no-op
 };
 
 export const get = async (refObj) => {
@@ -132,7 +145,7 @@ export const get = async (refObj) => {
       break;
     }
   }
-  
+
   return Promise.resolve({
     val: () => data,
     exists: () => data !== null && data !== undefined
@@ -148,11 +161,11 @@ export const storage = {};
 export const getDownloadURL = async (refObj) => Promise.resolve("https://via.placeholder.com/150");
 export const uploadBytes = async () => Promise.resolve({ ref: { fullPath: 'mock-path' } });
 export const uploadBytesResumable = (refObj, data) => ({
-    on: (event, progress, error, complete) => {
-        progress({ bytesTransferred: 100, totalBytes: 100 });
-        complete();
-    },
-    snapshot: { ref: { fullPath: 'mock-path' } }
+  on: (event, progress, error, complete) => {
+    progress({ bytesTransferred: 100, totalBytes: 100 });
+    complete();
+  },
+  snapshot: { ref: { fullPath: 'mock-path' } }
 });
 export const deleteObject = async () => Promise.resolve();
 
@@ -162,18 +175,18 @@ export { ref as sRef, ref as storageRef };
 export const usePushNotifications = () => ({
   notifications: [],
   unreadCount: 0,
-  markAsRead: () => {},
-  markAllAsRead: () => {}
+  markAsRead: () => { },
+  markAllAsRead: () => { }
 });
 
-export const useScheduleReminders = () => {};
-export const useTutorScheduleReminders = () => {};
-export const onIdTokenChanged = () => () => {};
+export const useScheduleReminders = () => { };
+export const useTutorScheduleReminders = () => { };
+export const onIdTokenChanged = () => () => { };
 export const sendPasswordResetEmail = async () => Promise.resolve();
 export const StorageUtils = {
-    save: () => {},
-    load: () => null,
-    remove: () => {},
-    isImage: (name) => name?.match(/\.(jpg|jpeg|png|gif|svg)$/i),
-    getThumbnailPath: (path) => path
+  save: () => { },
+  load: () => null,
+  remove: () => { },
+  isImage: (name) => name?.match(/\.(jpg|jpeg|png|gif|svg)$/i),
+  getThumbnailPath: (path) => path
 };

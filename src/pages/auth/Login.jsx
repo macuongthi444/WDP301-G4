@@ -19,25 +19,48 @@ function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleEmailLogin = (e) => {
+  const handleEmailLogin = async (e) => {
     e.preventDefault();
     if (!validate()) return;
     
     setLoading(true);
-    // Mock login
-    setTimeout(() => {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+      
+      // Save role to localStorage for app-wide use
+      localStorage.setItem('activeRole', user.role);
+      
       setLoading(false);
-      navigate('/dashboard');
-    }, 800);
+      if (user.role === 'tutor') {
+        navigate('/dashboard');
+      } else {
+        navigate('/student-home');
+      }
+    } catch (error) {
+      setLoading(false);
+      setErrors({ form: error.message || 'Đăng nhập thất bại' });
+    }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setLoading(true);
-    // Mock login
-    setTimeout(() => {
+    try {
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      const user = result.user;
+      
+      localStorage.setItem('activeRole', user.role || 'tutor');
+      
       setLoading(false);
-      navigate('/dashboard');
-    }, 800);
+      if (user.role === 'tutor') {
+        navigate('/dashboard');
+      } else {
+        navigate('/student-home');
+      }
+    } catch (error) {
+      setLoading(false);
+      alert("Đăng nhập Google thất bại");
+    }
   };
 
   return (

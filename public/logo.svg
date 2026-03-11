@@ -1,0 +1,60 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Main Premium Gradient -->
+    <linearGradient id="premium-gradient" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4ef090" /> <!-- Mint -->
+      <stop offset="50%" stop-color="#2ba5d4" /> <!-- Azure -->
+      <stop offset="100%" stop-color="#3b82f6" /> <!-- Blue -->
+    </linearGradient>
+    
+    <!-- Shadow Filter for Depth -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+      <feOffset dx="1" dy="2" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.2" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Inner Glow for Book -->
+    <radialGradient id="inner-glow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="white" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Outer Ring with Gradient -->
+  <circle cx="100" cy="100" r="92" stroke="url(#premium-gradient)" stroke-width="6" stroke-linecap="round" stroke-dasharray="10 5" opacity="0.3" />
+  <circle cx="100" cy="100" r="92" stroke="url(#premium-gradient)" stroke-width="3" filter="url(#shadow)" />
+  
+  <!-- Stylized Book -->
+  <g filter="url(#shadow)">
+    <!-- Left Page -->
+    <path d="M100 155C100 155 80 145 40 155V65C80 55 100 65 100 65V155Z" fill="url(#premium-gradient)" opacity="0.9" />
+    <!-- Right Page -->
+    <path d="M100 155C100 155 120 145 160 155V65C120 55 100 65 100 65V155Z" fill="url(#premium-gradient)" />
+    <!-- Center Spine -->
+    <path d="M98 65V155" stroke="white" stroke-width="1" stroke-opacity="0.3" />
+  </g>
+  
+  <!-- Sprout / Leaves growing from center -->
+  <g filter="url(#shadow)">
+    <path d="M100 65C100 45 85 30 75 35C75 35 80 55 100 65Z" fill="#4ef090" />
+    <path d="M100 65C100 45 115 30 125 35C125 35 120 55 100 65Z" fill="#52c41a" />
+    <path d="M100 65V85" stroke="#52c41a" stroke-width="3" stroke-linecap="round" />
+  </g>
+  
+  <!-- Modern Pen Icon -->
+  <g transform="translate(140, 40) rotate(-15)" filter="url(#shadow)">
+    <rect x="0" y="0" width="8" height="40" rx="4" fill="url(#premium-gradient)" />
+    <path d="M0 40L4 50L8 40H0Z" fill="url(#premium-gradient)" />
+    <circle cx="4" cy="5" r="2" fill="white" opacity="0.5" />
+  </g>
+
+  <!-- High-end Shine -->
+  <circle cx="100" cy="100" r="92" fill="url(#inner-glow)" pointer-events="none" />
+</svg>

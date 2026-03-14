@@ -15,17 +15,13 @@ exports.createStudentByTutor = async (req, res) => {
   try {
     const tutor = req.user;
 
-    // Kiểm tra quyền (đã fix ở bước trước, dùng cách linh hoạt)
     const hasTutorRole = tutor.roles.some(role =>
       (typeof role === 'string' && role === 'TUTOR') ||
       (role && role.name === 'TUTOR')
     );
 
     if (!hasTutorRole) {
-      return res.status(403).json({
-        success: false,
-        message: 'Chỉ gia sư mới có quyền tạo tài khoản học sinh',
-      });
+      return res.status(403).json({ success: false, message: 'Chỉ gia sư mới có quyền tạo tài khoản học sinh' });
     }
 
     const {
@@ -40,7 +36,6 @@ exports.createStudentByTutor = async (req, res) => {
       tutor_schedules = [],
     } = req.body;
 
-    // Validate cơ bản
     if (!student_full_name || !email) {
       return res.status(400).json({ success: false, message: 'Thiếu họ tên hoặc email' });
     }
@@ -50,20 +45,12 @@ exports.createStudentByTutor = async (req, res) => {
       return res.status(409).json({ success: false, message: 'Email đã tồn tại' });
     }
 
-    // Tìm role STUDENT (bắt buộc phải tồn tại)
     const studentRole = await Role.findOne({ name: 'STUDENT' });
     if (!studentRole) {
-      return res.status(500).json({
-        success: false,
-        message: 'Hệ thống chưa có role STUDENT. Vui lòng liên hệ admin.',
-      });
+      return res.status(500).json({ success: false, message: 'Hệ thống chưa có role STUDENT' });
     }
 
-    // Tạo mật khẩu ngẫu nhiên
-    const randomPassword = generateRandomPassword(12); // hàm bạn đã có
-    const password_hash = await bcrypt.hash(randomPassword, 12);
-
-    // Tạo student profile
+    // Tạo student profile – KHÔNG có password_hash
     const studentProfile = {
       student_full_name: student_full_name.trim(),
       school: school?.trim(),
@@ -71,7 +58,7 @@ exports.createStudentByTutor = async (req, res) => {
       class_name: class_name?.trim(),
       gender,
       dob: dob ? new Date(dob) : undefined,
-     tutor: tutor._id,
+      tutor: tutor._id,
       tutor_schedules: tutor_schedules.map(s => ({
         weekday: s.weekday,
         startTime: s.startTime,
@@ -80,57 +67,99 @@ exports.createStudentByTutor = async (req, res) => {
         isActive: true,
       })),
       has_completed_assignment: false,
-      status: 'ACTIVE',
+      status: 'ACTIVE', // trạng thái profile riêng (có thể giữ ACTIVE)
     };
 
-    // Tạo user học sinh
     const newStudent = new User({
       email: email.toLowerCase().trim(),
-      password_hash,
+      // KHÔNG tạo password_hash ở đây
       full_name: student_full_name.trim(),
       phone: phone?.trim(),
-      status: 'PENDING',
-      roles: [studentRole._id],          // ← ĐÚNG: mảng ObjectId
+      status: 'PENDING',           // ← Trạng thái chờ kích hoạt
+      roles: [studentRole._id],
       student_profile: studentProfile,
       isEmailVerified: false,
     });
 
     await newStudent.save();
 
-    // Gửi email thông báo (dùng sendStudentAccountEmail nếu đã có)
-    try {
-      await sendStudentAccountEmail({
-        to: email,
-        studentName: student_full_name,
-        tutorName: tutor.full_name,
-        password: randomPassword,
-        loginUrl: 'https://your-app.com/login',
-      });
-    } catch (err) {
-      console.error('Gửi email thất bại:', err);
-    }
-
     res.status(201).json({
       success: true,
-      message: 'Tạo tài khoản học sinh thành công',
+      message: 'Đã tạo hồ sơ học sinh thành công (chờ kích hoạt)',
       data: {
         studentId: newStudent._id,
         email: newStudent.email,
-        password: randomPassword,
-        student_full_name,
+        full_name: newStudent.full_name,
+        status: newStudent.status,
       },
     });
   } catch (error) {
     console.error('Create student error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi khi tạo tài khoản học sinh',
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
   }
 };
 // src/controllers/student.controller.js
 
+exports.activateStudentAccount = async (req, res) => {
+  try {
+    const tutor = req.user;
+    const studentId = req.params.studentId;
+
+    // Kiểm tra quyền tutor
+    const hasTutorRole = tutor.roles.some(role =>
+      (typeof role === 'string' && role === 'TUTOR') ||
+      (role && role.name === 'TUTOR')
+    );
+    if (!hasTutorRole) {
+      return res.status(403).json({ success: false, message: 'Chỉ gia sư mới có quyền kích hoạt' });
+    }
+
+    const student = await User.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy học sinh' });
+    }
+
+    if (student.status !== 'PENDING') {
+      return res.status(400).json({ success: false, message: 'Tài khoản không ở trạng thái chờ kích hoạt' });
+    }
+
+    if (student.password_hash) {
+      return res.status(400).json({ success: false, message: 'Tài khoản đã có mật khẩu' });
+    }
+
+    // Tạo mật khẩu ngẫu nhiên
+    const randomPassword = generateRandomPassword(12); // hàm này phải tồn tại
+    const password_hash = await bcrypt.hash(randomPassword, 12);
+
+    student.password_hash = password_hash;
+    student.status = 'ACTIVE';
+    student.isEmailVerified = false;
+
+    await student.save();
+
+    // Gửi email (nếu thất bại thì vẫn success, chỉ log lỗi)
+    try {
+      await sendStudentAccountEmail({
+        to: student.email,
+        studentName: student.full_name || student.student_profile?.student_full_name,
+        tutorName: tutor.full_name,
+        password: randomPassword,
+        loginUrl: 'http://localhost:3000/login', // thay bằng url thật
+      });
+    } catch (emailErr) {
+      console.error('Gửi email thất bại:', emailErr);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã kích hoạt tài khoản và gửi thông tin đăng nhập',
+      data: { studentId: student._id, email: student.email, status: student.status }
+    });
+  } catch (error) {
+    console.error('Activate error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+  }
+};
 exports.getStudents = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {

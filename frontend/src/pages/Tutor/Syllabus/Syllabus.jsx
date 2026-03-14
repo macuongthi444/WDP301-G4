@@ -9,6 +9,7 @@ const TutorSyllabus = () => {
   const [syllabi, setSyllabi] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [classes, setClasses] = useState([]);
 
   // Search/filter
   const [query, setQuery] = useState("");
@@ -22,7 +23,6 @@ const TutorSyllabus = () => {
     version: "1.0",
     gradeLevel: "",
     subject: "",
-    classLevel: [], // sẽ là mảng ID lớp học (string ObjectId)
   });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
@@ -35,8 +35,13 @@ const TutorSyllabus = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get("/syllabus");
-      setSyllabi(res.data.data || []);
+      // const res = await api.get("/syllabus");
+      const [sylRes, classRes] = await Promise.all([
+        api.get("/syllabus"),
+        api.get("/class"),           // ← fetch danh sách lớp
+      ]);
+      setSyllabi(sylRes.data.data || []);
+      setClasses(classRes.data.data || []); // giả sử response có { data: [...] }
     } catch (err) {
       setError("Không thể tải danh sách giáo trình");
       setSyllabi([]);
@@ -51,45 +56,47 @@ const TutorSyllabus = () => {
   };
 
   const handleCreateSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.title.trim()) {
-      setCreateError("Tiêu đề là bắt buộc");
-      return;
-    }
+  e.preventDefault();
+  if (!formData.title.trim()) {
+    setCreateError("Tiêu đề là bắt buộc");
+    return;
+  }
 
-    setCreating(true);
-    setCreateError(null);
+  setCreating(true);
+  setCreateError(null);
 
-    try {
-      const payload = {
-        title: formData.title.trim(),
-        description: formData.description.trim() || undefined,
-        version: formData.version.trim() || "1.0",
-        gradeLevel: formData.gradeLevel || undefined,
-        subject: formData.subject.trim() || undefined,
-        classLevel: formData.classLevel, // mảng ID lớp học (từ multiselect sau này)
-      };
+  try {
+    const payload = {
+      title: formData.title.trim(),
+      description: formData.description?.trim() || undefined,
+      version: formData.version?.trim() || "1.0",
+      gradeLevel: formData.gradeLevel || undefined,
+      subject: formData.subject?.trim() || undefined,
+    };
 
-      await api.post("/syllabus", payload);
+    const res = await api.post("/syllabus", payload);
+    console.log("Response từ server:", res.data); // debug
 
-      setFormData({
-        title: "",
-        description: "",
-        version: "1.0",
-        gradeLevel: "",
-        subject: "",
-        classLevel: [],
-      });
-      setIsAddModalOpen(false);
-      await fetchSyllabi();
-    } catch (err) {
-      setCreateError(
-        err.response?.data?.message || "Tạo giáo trình thất bại. Vui lòng thử lại."
-      );
-    } finally {
-      setCreating(false);
-    }
-  };
+    // reset form
+    setFormData({
+      title: "",
+      description: "",
+      version: "1.0",
+      gradeLevel: "",
+      subject: "",
+      classLevel: [],
+    });
+    setIsAddModalOpen(false);
+    await fetchSyllabi();
+  } catch (err) {
+    console.error("Lỗi tạo syllabus:", err);
+    setCreateError(
+      err.response?.data?.message || "Tạo giáo trình thất bại"
+    );
+  } finally {
+    setCreating(false);
+  }
+};
 
   const visibleSyllabi = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -113,6 +120,12 @@ const TutorSyllabus = () => {
       });
   }, [syllabi, query, hasFileFilter]);
 
+
+  // ── MOVE THIS UP HERE ──
+  const handleClassSelectChange = (e) => {
+    const selected = Array.from(e.target.selectedOptions).map((option) => option.value);
+    setFormData((prev) => ({ ...prev, classLevel: selected }));
+  };
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       {/* Header */}
@@ -263,10 +276,13 @@ const TutorSyllabus = () => {
                     className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 disabled:bg-slate-50"
                   >
                     <option value="">Chọn khối</option>
-                    <option value="Lớp 1">Lớp 1</option>
-                    <option value="Lớp 2">Lớp 2</option>
-                    {/* Thêm các option khác tương ứng */}
-                    <option value="Khối 12">Khối 12</option>
+                    <option value="Lớp 6">Lớp 6</option>
+                    <option value="Lớp 7">Lớp 7</option>
+                    <option value="Lớp 8">Lớp 8</option>
+                    <option value="Lớp 9">Lớp 9</option>
+                    <option value="Lớp 10">Lớp 10</option>
+                    <option value="Lớp 11">Lớp 11</option>
+                    <option value="Lớp 12">Lớp 12</option>
                     <option value="Đại học">Đại học</option>
                     <option value="Khác">Khác</option>
                   </select>
@@ -286,22 +302,7 @@ const TutorSyllabus = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Lớp học áp dụng (ID lớp - tạm nhập thủ công)</label>
-                <input
-                  type="text"
-                  name="classLevelTemp" // tạm để nhập string, sau này thay bằng multiselect
-                  value={formData.classLevel.join(", ")}
-                  onChange={(e) => {
-                    const ids = e.target.value.split(",").map(id => id.trim()).filter(Boolean);
-                    setFormData(prev => ({ ...prev, classLevel: ids }));
-                  }}
-                  disabled={creating}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 disabled:bg-slate-50"
-                  placeholder="64f123abc..., 64f456def... (phân cách bằng dấu phẩy)"
-                />
-                <p className="text-xs text-slate-500 mt-1">Sau này thay bằng dropdown/multiselect chọn lớp</p>
-              </div>
+              
 
               <div>
                 <label className="block text-sm font-medium text-slate-700">Mô tả</label>

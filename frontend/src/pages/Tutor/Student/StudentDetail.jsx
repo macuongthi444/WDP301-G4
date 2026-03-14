@@ -13,9 +13,21 @@ const StudentDetail = () => {
 
   // Modal edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState({});
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    dobDay: "",
+    dobMonth: "",
+    dobYear: "",
+    gender: "",
+    school: "",
+    grade: "",
+    class_name: "",
+  });
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState(null);
+  const [activating, setActivating] = useState(false);
 
   useEffect(() => {
     fetchStudent();
@@ -28,12 +40,25 @@ const StudentDetail = () => {
       const data = res.data?.data || res.data;
       if (data) {
         setStudent(data);
-        // Khởi tạo form edit với dữ liệu hiện tại
+
+        // Parse dob nếu có
+        let dobDay = "", dobMonth = "", dobYear = "";
+        if (data.dob) {
+          const date = new Date(data.dob);
+          if (!isNaN(date.getTime())) {
+            dobDay = date.getDate().toString().padStart(2, "0");
+            dobMonth = (date.getMonth() + 1).toString().padStart(2, "0");
+            dobYear = date.getFullYear().toString();
+          }
+        }
+
         setEditForm({
           full_name: data.full_name || data.student_profile?.student_full_name || "",
           email: data.email || "",
           phone: data.phone || "",
-          dob: data.dob ? new Date(data.dob).toISOString().split("T")[0] : "",
+          dobDay,
+          dobMonth,
+          dobYear,
           gender: data.gender || "",
           school: data.student_profile?.school || "",
           grade: data.student_profile?.grade || "",
@@ -61,6 +86,12 @@ const StudentDetail = () => {
       return;
     }
 
+    // Ghép ngày sinh
+    let dob = undefined;
+    if (editForm.dobYear && editForm.dobMonth && editForm.dobDay) {
+      dob = `${editForm.dobYear}-${editForm.dobMonth}-${editForm.dobDay}`;
+    }
+
     try {
       setSaving(true);
       setEditError(null);
@@ -69,7 +100,7 @@ const StudentDetail = () => {
         full_name: editForm.full_name.trim(),
         email: editForm.email.trim().toLowerCase(),
         phone: editForm.phone?.trim() || undefined,
-        dob: editForm.dob || undefined,
+        dob,  // gửi string YYYY-MM-DD hoặc undefined
         gender: editForm.gender || undefined,
         student_profile: {
           student_full_name: editForm.full_name.trim(),
@@ -98,6 +129,26 @@ const StudentDetail = () => {
       setEditError(err.response?.data?.message || "Cập nhật thất bại");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleActivateAccount = async () => {
+    if (!window.confirm("Bạn có chắc muốn kích hoạt tài khoản này?\nMật khẩu ngẫu nhiên sẽ được tạo và gửi qua email cho học sinh.")) {
+      return;
+    }
+
+    try {
+      setActivating(true);
+      const res = await api.post(`/students/${studentId}/activate`);
+
+      if (res.data.success) {
+        setStudent((prev) => ({ ...prev, status: "ACTIVE" }));
+        alert("Đã kích hoạt tài khoản thành công!\nThông tin đăng nhập đã được gửi qua email.");
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Kích hoạt thất bại");
+    } finally {
+      setActivating(false);
     }
   };
 
@@ -156,13 +207,35 @@ const StudentDetail = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Thông tin học sinh</h1>
         </div>
 
-        <button
-          onClick={() => setIsEditModalOpen(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition"
-        >
-          <Edit size={18} />
-          Chỉnh sửa
-        </button>
+        <div className="flex gap-3">
+          {student.status === "PENDING" && !student.password_hash && (
+            <button
+              onClick={handleActivateAccount}
+              disabled={activating}
+              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition disabled:opacity-60"
+            >
+              {activating ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Đang kích hoạt...
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  Kích hoạt tài khoản
+                </>
+              )}
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition"
+          >
+            <Edit size={18} />
+            Chỉnh sửa
+          </button>
+        </div>
       </div>
 
       {/* Card chính */}
@@ -173,7 +246,9 @@ const StudentDetail = () => {
               <User size={40} className="text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">{student.full_name || student.student_profile?.student_full_name}</h2>
+              <h2 className="text-2xl font-bold">
+                {student.full_name || student.student_profile?.student_full_name}
+              </h2>
               <p className="mt-1 opacity-90">{student.email}</p>
             </div>
           </div>
@@ -189,28 +264,54 @@ const StudentDetail = () => {
         <div className="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <InfoItem icon={Mail} color="indigo" label="Email" value={student.email} />
-            <InfoItem icon={Phone} color="green" label="Số điện thoại" value={student.phone || "Chưa cập nhật"} />
+            <InfoItem
+              icon={Phone}
+              color="green"
+              label="Số điện thoại"
+              value={student.phone || "Chưa cập nhật"}
+            />
             <InfoItem
               icon={Calendar}
               color="blue"
               label="Ngày sinh"
-              value={student.dob ? new Date(student.dob).toLocaleDateString("vi-VN") : "Chưa cập nhật"}
+              value={
+                student.dob
+                  ? new Date(student.dob).toLocaleDateString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })
+                  : "Chưa cập nhật"
+              }
             />
           </div>
 
           <div className="space-y-6">
-            <InfoItem icon={School} color="purple" label="Trường học" value={student.student_profile?.school || "-"} />
+            <InfoItem
+              icon={School}
+              color="purple"
+              label="Trường học"
+              value={student.student_profile?.school || "-"}
+            />
             <InfoItem
               icon={BookOpen}
               color="amber"
               label="Khối / Lớp"
               value={
-                [student.student_profile?.grade, student.student_profile?.class_name]
+                [
+                  student.student_profile?.grade,
+                  student.student_profile?.class_name,
+                ]
                   .filter(Boolean)
                   .join(" - ") || "Chưa cập nhật"
               }
             />
-            <InfoItem icon={User} color="rose" label="Giới tính" value={student.gender || "Chưa cập nhật"} />
+            <InfoItem
+              icon={User}
+              color="rose"
+              label="Giới tính"
+              value={student.gender || "Chưa cập nhật"}
+            />
           </div>
         </div>
       </div>
@@ -221,7 +322,10 @@ const StudentDetail = () => {
         {student.student_profile?.tutor_schedules?.length > 0 ? (
           <div className="space-y-3">
             {student.student_profile.tutor_schedules.map((sch, idx) => (
-              <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
+              <div
+                key={idx}
+                className="flex justify-between items-center p-4 bg-slate-50 rounded-xl"
+              >
                 <div>
                   <p className="font-medium">
                     {["CN", "T2", "T3", "T4", "T5", "T6", "T7"][sch.weekday]}
@@ -230,7 +334,13 @@ const StudentDetail = () => {
                     {sch.startTime} - {sch.endTime} • {sch.subject || "Chưa xác định"}
                   </p>
                 </div>
-                <span className={`text-xs px-3 py-1 rounded-full ${sch.isActive ? "bg-green-100 text-green-700" : "bg-rose-100 text-rose-700"}`}>
+                <span
+                  className={`text-xs px-3 py-1 rounded-full ${
+                    sch.isActive
+                      ? "bg-green-100 text-green-700"
+                      : "bg-rose-100 text-rose-700"
+                  }`}
+                >
                   {sch.isActive ? "Đang hoạt động" : "Tạm dừng"}
                 </span>
               </div>
@@ -246,7 +356,9 @@ const StudentDetail = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between z-10">
-              <h2 className="text-xl font-bold text-slate-900">Chỉnh sửa thông tin học sinh</h2>
+              <h2 className="text-xl font-bold text-slate-900">
+                Chỉnh sửa thông tin học sinh
+              </h2>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="p-2 rounded-full hover:bg-slate-100"
@@ -292,7 +404,9 @@ const StudentDetail = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Số điện thoại</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Số điện thoại
+                  </label>
                   <input
                     type="tel"
                     name="phone"
@@ -303,20 +417,59 @@ const StudentDetail = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Ngày sinh</label>
-                  <input
-                    type="date"
-                    name="dob"
-                    value={editForm.dob}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Ngày sinh
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <select
+                      name="dobDay"
+                      value={editForm.dobDay}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Ngày</option>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                        <option key={d} value={d.toString().padStart(2, "0")}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      name="dobMonth"
+                      value={editForm.dobMonth}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Tháng</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                        <option key={m} value={m.toString().padStart(2, "0")}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      name="dobYear"
+                      value={editForm.dobYear}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Năm</option>
+                      {Array.from({ length: 40 }, (_, i) => {
+                        const year = new Date().getFullYear() - 5 - i;
+                        return <option key={year} value={year}>{year}</option>;
+                      })}
+                    </select>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Giới tính</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Giới tính
+                  </label>
                   <select
                     name="gender"
                     value={editForm.gender}
@@ -331,7 +484,9 @@ const StudentDetail = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Trường học</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Trường học
+                  </label>
                   <input
                     type="text"
                     name="school"
@@ -344,7 +499,9 @@ const StudentDetail = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Khối</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Khối
+                  </label>
                   <input
                     type="text"
                     name="grade"
@@ -356,7 +513,9 @@ const StudentDetail = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Lớp</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Lớp
+                  </label>
                   <input
                     type="text"
                     name="class_name"

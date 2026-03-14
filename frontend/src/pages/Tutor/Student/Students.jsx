@@ -18,7 +18,9 @@ const TutorStudents = () => {
     student_full_name: "",
     email: "",
     phone: "",
-    dob: "",
+    dobDay: "",
+    dobMonth: "",
+    dobYear: "",
     gender: "Nam",
     school: "",
     grade: "",
@@ -74,7 +76,10 @@ const TutorStudents = () => {
       alert("Vui lòng điền đầy đủ: Họ tên, Email, Trường học!");
       return;
     }
-
+    let dob = undefined;
+    if (newStudent.dobYear && newStudent.dobMonth && newStudent.dobDay) {
+      dob = `${newStudent.dobYear}-${newStudent.dobMonth}-${newStudent.dobDay}`;
+    }
     try {
       setLoading(true);
 
@@ -86,7 +91,7 @@ const TutorStudents = () => {
         grade: newStudent.grade?.trim(),
         class_name: newStudent.class_name?.trim(),
         gender: newStudent.gender,
-        dob: newStudent.dob || undefined,
+        dob,  // gửi string "YYYY-MM-DD" hoặc undefined
       };
 
       const res = await api.post("/students", payload);
@@ -107,7 +112,7 @@ const TutorStudents = () => {
         };
 
         setStudents((prev) => [...prev, newStudentData]);
-        alert("Thêm học sinh thành công! Mật khẩu đã được gửi qua email.");
+        alert("Đã tạo hồ sơ học sinh thành công!\nTài khoản đang chờ kích hoạt.");
         closeModal();
       }
     } catch (err) {
@@ -386,14 +391,51 @@ const TutorStudents = () => {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ngày sinh</label>
-                  <input
-                    type="date"
-                    name="dob"
-                    value={newStudent.dob}
-                    onChange={handleInputChange}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                    Ngày sinh
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Ngày */}
+                    <select
+                      value={newStudent.dobDay}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, dobDay: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Ngày</option>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                        <option key={d} value={d.toString().padStart(2, '0')}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Tháng */}
+                    <select
+                      value={newStudent.dobMonth}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, dobMonth: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Tháng</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m.toString().padStart(2, '0')}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Năm - giả sử học sinh từ 5 đến 25 tuổi, điều chỉnh theo nhu cầu */}
+                    <select
+                      value={newStudent.dobYear}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, dobYear: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">Năm</option>
+                      {Array.from({ length: 100 }, (_, i) => {
+                        const year = new Date().getFullYear() - 5 - i; // từ năm nay -5 đến -34
+                        return <option key={year} value={year}>{year}</option>;
+                      })}
+                    </select>
+                  </div>
                 </div>
 
                 <div>

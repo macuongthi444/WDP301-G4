@@ -14,7 +14,7 @@ router.post(
   authorize('TUTOR'),
   studentController.createStudentByTutor
 );
-
+router.post('/:studentId/activate', protect, authorize('TUTOR'), studentController.activateStudentAccount);
 // GET: Lấy danh sách học sinh
 router.get(
   '/',   // ← Đổi từ '/students' thành '/' → GET /api/students
